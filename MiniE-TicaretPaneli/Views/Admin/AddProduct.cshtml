@@ -1,0 +1,191 @@
+﻿@* Views/Admin/AddProduct.cshtml *@
+@model MiniE_TicaretPaneli.Models.ViewModels.AdminProductViewModel
+
+@{
+    ViewData["Title"] = "Yeni Ürün Ekle";
+}
+
+<h1 class="mb-4">Yeni Ürün Ekle</h1>
+
+<div class="card shadow-sm p-4">
+    <form asp-action="AddProduct" method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+        <div class="row">
+            <div class="col-md-6">
+                @* ... (Name, Description, Price, Stock, ProductImage) ... *@
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label asp-for="Product.Gender" class="form-label">Cinsiyet</label>
+                    <select asp-for="Product.Gender" class="form-select" id="productGender">
+                        <option value="">-- Seçiniz --</option>
+                        <option value="Kadın">Kadın</option>
+                        <option value="Erkek">Erkek</option>
+                        <option value="Çocuk">Çocuk</option>
+                        @* Unisex seçeneği kaldırıldı *@
+                    </select>
+                    <span asp-validation-for="Product.Gender" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Product.MainCategoryId" class="form-label">Ana Kategori</label>
+                    <select asp-for="Product.MainCategoryId" class="form-select" id="mainCategory">
+                        <option value="">-- Ana Kategori Seçin --</option>
+                        @* Ana kategoriler JS ile dinamik olarak yüklenecek *@
+                    </select>
+                    <span asp-validation-for="Product.MainCategoryId" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Product.SubCategoryId" class="form-label">Alt Kategori</label>
+                    <select asp-for="Product.SubCategoryId" class="form-select" id="subCategory">
+                        <option value="">-- Alt Kategori Seçin --</option>
+                        @* Alt kategoriler JS ile dinamik olarak yüklenecek *@
+                    </select>
+                    <span asp-validation-for="Product.SubCategoryId" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Product.Brand" class="form-label"></label>
+                    <input asp-for="Product.Brand" class="form-control" />
+                    <span asp-validation-for="Product.Brand" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Product.Material" class="form-label"></label>
+                    <input asp-for="Product.Material" class="form-control" />
+                    <span asp-validation-for="Product.Material" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Product.Pattern" class="form-label"></label>
+                    <input asp-for="Product.Pattern" class="form-control" />
+                    <span asp-validation-for="Product.Pattern" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+        <hr />
+        <h5 class="mb-3">Beden Seçenekleri</h5>
+        <div class="row mb-3">
+            @foreach (var size in Model.AllSizes)
+            {
+                <div class="col-sm-2 col-md-1">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="SelectedSizes" value="@size" id="size_@size"
+                        @(Model.SelectedSizes.Contains(size) ? "checked" : "")>
+                        <label class="form-check-label" for="size_@size">@size</label>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <h5 class="mb-3">Renk Seçenekleri</h5>
+        <div class="row mb-4">
+            @foreach (var color in Model.AllColors)
+            {
+                <div class="col-sm-3 col-md-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="SelectedColors" value="@color" id="color_@color"
+                        @(Model.SelectedColors.Contains(color) ? "checked" : "")>
+                        <label class="form-check-label" for="color_@color">@color</label>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <hr />
+        <div class="d-flex justify-content-between">
+            <a asp-action="Products" class="btn btn-secondary">Listeye Geri Dön</a>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Kaydet</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        $(document).ready(function () {
+            // Tüm ana kategorileri JavaScript'e al
+            var allMainCategories = @Html.Raw(Json.Serialize(Model.MainCategories));
+
+            // Ana kategori dropdown'unu güncelleyen fonksiyon
+            function updateMainCategories(selectedGender, initialMainCategoryId = null) {
+                var mainCategoryDropdown = $('#mainCategory');
+                mainCategoryDropdown.empty();
+                mainCategoryDropdown.append($('<option></option>').val('').text('-- Ana Kategori Seçin --'));
+
+                if (selectedGender) {
+                    $.each(allMainCategories, function (index, category) {
+                        // Kategori Gender alanı selectedGender ile eşleşiyorsa ekle
+                        if (category.gender === selectedGender) {
+                            var option = $('<option></option>').val(category.id).text(category.name);
+                            if (category.id == initialMainCategoryId) {
+                                option.attr('selected', 'selected');
+                            }
+                            mainCategoryDropdown.append(option);
+                        }
+                    });
+                }
+            }
+
+            // Alt kategori yükleyen fonksiyon (mevcut haliyle)
+            function updateSubCategories(mainCategoryId, initialSubCategoryId = null) {
+                var subCategoryDropdown = $('#subCategory');
+                subCategoryDropdown.empty();
+                subCategoryDropdown.append($('<option></option>').val('').text('-- Alt Kategori Seçin --'));
+
+                if (mainCategoryId) {
+                    $.ajax({
+                        url: '@Url.Action("GetSubcategoriesByMainCategory", "Admin")',
+                        type: 'GET',
+                        data: { mainCategoryId: mainCategoryId },
+                        success: function (data) {
+                            $.each(data, function (index, subcategory) {
+                                var option = $('<option></option>').val(subcategory.id).text(subcategory.name);
+                                if (subcategory.id == initialSubCategoryId) {
+                                    option.attr('selected', 'selected');
+                                }
+                                subCategoryDropdown.append(option);
+                            });
+                        },
+                        error: function () {
+                            console.log("Alt kategoriler yüklenirken hata oluştu.");
+                        }
+                    });
+                }
+            }
+
+            // Cinsiyet seçimi değiştiğinde Ana Kategorileri güncelle
+            $('#productGender').change(function () {
+                var selectedGender = $(this).val();
+                updateMainCategories(selectedGender); // Ana kategorileri yeniden yükle
+                $('#mainCategory').val(''); // Ana kategori seçimini sıfırla
+                $('#subCategory').empty().append($('<option></option>').val('').text('-- Alt Kategori Seçin --')); // Alt kategorileri sıfırla
+            });
+
+            // Sayfa yüklendiğinde mevcut cinsiyet seçimine göre Ana Kategorileri ve Alt Kategorileri yükle
+            var initialGender = $('#productGender').val();
+            var initialMainCategoryId = '@(Model.Product.MainCategoryId)'; // Düzenleme modunda seçili ana kategori ID
+            var initialSubCategoryId = '@(Model.Product.SubCategoryId)'; // Düzenleme modunda seçili alt kategori ID
+
+            // Eğer cinsiyet seçili ise ana kategorileri doldur
+            if (initialGender) {
+                updateMainCategories(initialGender, initialMainCategoryId);
+                // Eğer başlangıç ana kategorisi varsa, alt kategorileri de yükle
+                if (initialMainCategoryId) {
+                    updateSubCategories(initialMainCategoryId, initialSubCategoryId);
+                }
+            } else {
+                // Hiçbir cinsiyet seçili değilse dropdown'ları boşalt
+                $('#mainCategory').empty().append($('<option></option>').val('').text('-- Ana Kategori Seçin --'));
+                $('#subCategory').empty().append($('<option></option>').val('').text('-- Alt Kategori Seçin --'));
+            }
+
+            // Ana kategori değiştiğinde alt kategorileri yükle
+            $('#mainCategory').change(function () {
+                var mainCategoryId = $(this).val();
+                updateSubCategories(mainCategoryId);
+            });
+        });
+    </script>
+}

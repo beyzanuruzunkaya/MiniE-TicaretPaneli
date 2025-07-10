@@ -1,0 +1,11 @@
+﻿@* Views/Account/AccessDenied.cshtml *@
+@{
+    ViewData["Title"] = "Erişim Reddedildi";
+    Layout = "_Layout";
+}
+
+<div class="alert alert-danger text-center" role="alert">
+    <h2>Erişim Reddedildi!</h2>
+    <p>Bu sayfaya erişim yetkiniz bulunmamaktadır.</p>
+    <p><a asp-controller="Account" asp-action="Login" class="btn btn-warning">Giriş Sayfasına Dön</a></p>
+</div>

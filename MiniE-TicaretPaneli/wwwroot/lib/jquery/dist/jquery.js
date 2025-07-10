@@ -677,13 +677,10 @@ var i,
 
 		return nonHex ?
 
-			// Strip the backslash prefix from a non-hex escape sequence
+			
 			nonHex :
 
-			// Replace a hexadecimal escape sequence with the encoded Unicode code point
-			// Support: IE <=11+
-			// For values outside the Basic Multilingual Plane (BMP), manually construct a
-			// surrogate pair
+			
 			high < 0 ?
 				String.fromCharCode( high + 0x10000 ) :
 				String.fromCharCode( high >> 10 | 0xD800, high & 0x3FF | 0xDC00 );

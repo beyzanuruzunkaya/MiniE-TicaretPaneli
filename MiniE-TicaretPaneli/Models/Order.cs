@@ -8,7 +8,7 @@
         public User User { get; set; } = null!; // Navigation property
 
         public DateTime OrderDate { get; set; } // Siparişin verildiği tarih
-        public decimal TotalAmount { get; set; } // Siparişin toplam tutarı
+        public float TotalAmount { get; set; } // Siparişin toplam tutarı
 
         public string Status { get; set; } = "Pending"; // Sipariş durumu (örn: Pending, Shipped, Delivered, Cancelled)
 

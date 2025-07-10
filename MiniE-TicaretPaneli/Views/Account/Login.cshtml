@@ -1,0 +1,43 @@
+﻿@* Views/Account/Login.cshtml *@
+@{
+    ViewData["Title"] = "Giriş Yap";
+    Layout = "_Layout"; // Genel layout dosyanızı kullanın
+}
+
+<div class="container">
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-lg p-4">
+                <h2 class="card-title text-center mb-4">Hesabınıza Giriş Yapın</h2>
+                <hr />
+
+                @if (ViewBag.ErrorMessage != null)
+                {
+                    <div class="alert alert-danger" role="alert">
+                        @ViewBag.ErrorMessage
+                    </div>
+                }
+
+                <form asp-action="Login" asp-controller="Account" method="post">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Kullanıcı Adı:</label>
+                        <input type="text" class="form-control" id="username" name="username" required autocomplete="username">
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Şifre:</label>
+                        <input type="password" class="form-control" id="password" name="password" required autocomplete="current-password">
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-sign-in-alt me-2"></i>Giriş Yap</button>
+                    </div>
+                </form>
+
+                <div class="mt-4 text-center">
+                    <p class="text-muted">Hesabınız yok mu? <a asp-action="Register" asp-controller="Account" class="text-decoration-none">Şimdi Kaydolun</a></p>
+                    <p class="text-muted">Şifrenizi mi unuttunuz? <a asp-action="ForgotPassword" asp-controller="Account" class="text-decoration-none">Sıfırlayın</a></p>
+                </div>
+                <hr class="my-3">
+            </div>
+        </div>
+    </div>
+</div>

@@ -11,6 +11,6 @@
         public Product Product { get; set; } = null!; // Navigation property
 
         public int Quantity { get; set; } // Üründen kaç adet alındığı
-        public decimal UnitPrice { get; set; } // Ürünün sipariş anındaki birim fiyatı (fiyat değişebilir, bu yüzden kaydedilir)
+        public float UnitPrice { get; set; } // Ürünün sipariş anındaki birim fiyatı (fiyat değişebilir, bu yüzden kaydedilir)
     }
 }

@@ -1514,20 +1514,20 @@ $.extend( $.validator, {
 				supportedTypes = [ "text", "number", "range" ],
 				re = new RegExp( "\\b" + type + "\\b" ),
 				notSupported = type && !re.test( supportedTypes.join() ),
-				decimalPlaces = function( num ) {
+				floatPlaces = function( num ) {
 					var match = ( "" + num ).match( /(?:\.(\d+))?$/ );
 					if ( !match ) {
 						return 0;
 					}
 
-					// Number of digits right of decimal point.
+					
 					return match[ 1 ] ? match[ 1 ].length : 0;
 				},
 				toInt = function( num ) {
-					return Math.round( num * Math.pow( 10, decimals ) );
+					return Math.round( num * Math.pow( 10, floats ) );
 				},
 				valid = true,
-				decimals;
+				floats;
 
 			// Works only for text, number and range input types
 			// TODO find a way to support input types date, datetime, datetime-local, month, time and week
@@ -1535,10 +1535,9 @@ $.extend( $.validator, {
 				throw new Error( errorMessage );
 			}
 
-			decimals = decimalPlaces( param );
+			floats = floatPlaces( param );
 
-			// Value can't have too many decimals
-			if ( decimalPlaces( value ) > decimals || toInt( value ) % toInt( param ) !== 0 ) {
+			if ( floatPlaces( value ) > floats || toInt( value ) % toInt( param ) !== 0 ) {
 				valid = false;
 			}
 
