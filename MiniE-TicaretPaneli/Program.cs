@@ -1,8 +1,16 @@
 // Program.cs
 using Microsoft.EntityFrameworkCore; // Bu using ifadesi olmalý
 using MiniE_TicaretPaneli.Data; // DbContext'inizin namespace'i
+<<<<<<< HEAD
 using Microsoft.AspNetCore.Authentication.Cookies;
 
+=======
+using MiniE_TicaretPaneli.Models; // SeedData içinde User ve Product kullanýlýyorsa
+using Microsoft.AspNetCore.Authentication.Cookies;
+using System; // TimeSpan için
+using Microsoft.Extensions.DependencyInjection; // IServiceScopeFactory için (SeedData'da kullanýlýyor)
+using Microsoft.Extensions.Logging; // ILogger için (SeedData'da kullanýlýyor)
+>>>>>>> origin/master
 
 
 var builder = WebApplication.CreateBuilder(args);

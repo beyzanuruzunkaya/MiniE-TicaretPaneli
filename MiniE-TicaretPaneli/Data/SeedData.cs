@@ -17,10 +17,17 @@ namespace MiniE_TicaretPaneli.Data
                 serviceProvider.GetRequiredService<DbContextOptions<ApplicationDbContext>>()))
             {
                 // Geçici olarak bu kontrolü yorum satırı yapın ki veritabanı sıfırdan doldurulabilsin
+<<<<<<< HEAD
                 if (context.Categories.Any() || context.Products.Any() || context.Users.Any())
                 {
                     return;
                 }
+=======
+                // if (context.Categories.Any() || context.Products.Any() || context.Users.Any())
+                // {
+                //     return;
+                // }
+>>>>>>> origin/master
 
                 // 1. Kullanıcıları Seed Etme (Aynı kalır)
                 context.Users.AddRange(

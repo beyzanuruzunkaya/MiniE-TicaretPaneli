@@ -1,4 +1,8 @@
 ﻿// Models/Category.cs
+<<<<<<< HEAD
+=======
+using System.Collections.Generic;
+>>>>>>> origin/master
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -27,7 +31,11 @@ namespace MiniE_TicaretPaneli.Models
 
         // <<<<<< YENİ EKLENTİ: Cinsiyet özelliği >>>>>
         [MaxLength(50)]
+<<<<<<< HEAD
         public string? Gender { get; set; } // "Kadın", "Erkek", "Çocuk" veya null (genel kategoriler için)
+=======
+        public string? Gender { get; set; } // "Kadın", "Erkek", "Çocuk", "Unisex" veya null (genel kategoriler için)
+>>>>>>> origin/master
 
         [NotMapped]
         public string FullPath { get; set; } = string.Empty;

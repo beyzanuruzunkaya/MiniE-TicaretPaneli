@@ -10,7 +10,11 @@
         public DateTime OrderDate { get; set; } // Siparişin verildiği tarih
         public float TotalAmount { get; set; } // Siparişin toplam tutarı
 
+<<<<<<< HEAD
         public string Status { get; set; } = "Pending"; // Sipariş durumu (örn: Pending, Shipped, Delivered, Cancelled) status enums
+=======
+        public string Status { get; set; } = "Pending"; // Sipariş durumu (örn: Pending, Shipped, Delivered, Cancelled)
+>>>>>>> origin/master
 
         // Bir siparişin birden çok ürün kalemi olabilir (one-to-many relationship)
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
