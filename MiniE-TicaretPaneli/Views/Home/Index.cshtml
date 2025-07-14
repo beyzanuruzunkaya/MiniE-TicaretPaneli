@@ -1,0 +1,150 @@
+﻿@* Views/Home/Index.cshtml *@
+@{
+    ViewData["Title"] = "Anasayfa";
+}
+
+<section class="hero-section text-center text-white py-5 mb-5" style="background-image: url('/images/main-banner.jpg'); background-size: cover; background-position: center; min-height: 500px; display: flex; align-items: center; justify-content: center;">
+    <div class="container">
+        <h1 class="display-3 fw-bold text-shadow-dark">Tarzınızı Keşfedin!</h1>
+        <p class="lead my-4 text-shadow-dark">En yeni kıyafet trendleri, aksesuarlar ve çok daha fazlası şimdi parmaklarınızın ucunda.</p>
+        <a asp-controller="Customer" asp-action="Products" class="btn btn-warning btn-lg px-4 py-2 custom-btn-glow">
+            <i class="fas fa-shopping-bag me-2"></i> Hemen Alışverişe Başla
+        </a>
+    </div>
+</section>
+
+<section class="container mb-5">
+    <h2 class="text-center mb-4 display-5 fw-bold text-dark-emphasis">Popüler Kategoriler</h2>
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        <div class="col">
+            <div class="card h-100 shadow-sm category-card text-center">
+                <img src="/images/kadin-giyim-kategori.jpg" class="card-img-top" alt="Kadın Giyim">
+                <div class="card-body">
+                    <h5 class="card-title">Kadın Giyim</h5>
+                    <p class="card-text">En şık ve güncel kadın giyim koleksiyonları.</p>
+                    <a asp-controller="Customer" asp-action="Products" asp-route-gender="Kadın" class="btn btn-outline-primary mt-2">İncele <i class="fas fa-arrow-right ms-2"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card h-100 shadow-sm category-card text-center">
+                <img src="/images/erkek-giyim-kategori.jpg" class="card-img-top" alt="Erkek Giyim">
+                <div class="card-body">
+                    <h5 class="card-title">Erkek Giyim</h5>
+                    <p class="card-text">Tarz sahibi erkekler için özel seçkiler.</p>
+                    <a asp-controller="Customer" asp-action="Products" asp-route-gender="Erkek" class="btn btn-outline-primary mt-2">İncele <i class="fas fa-arrow-right ms-2"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card h-100 shadow-sm category-card text-center">
+                <img src="/images/cocuk-giyim-kategori.jpg" class="card-img-top" alt="Çocuk Giyim">
+                <div class="card-body">
+                    <h5 class="card-title">Çocuk Giyim</h5>
+                    <p class="card-text">Minik kahramanlar için rahat ve şık giysiler.</p>
+                    <a asp-controller="Customer" asp-action="Products" asp-route-gender="Çocuk" class="btn btn-outline-primary mt-2">İncele <i class="fas fa-arrow-right ms-2"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="container mb-5">
+    <h2 class="text-center mb-4 display-5 fw-bold text-dark-emphasis">Öne Çıkan Ürünler</h2>
+    <div class="row row-cols-1 row-cols-md-4 g-4">
+        <div class="col">
+            <div class="card h-100 product-card shadow-sm">
+                <img src="/images/default-product.jpg" class="card-img-top" alt="Ürün Adı">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">Ürün Adı 1</h5>
+                    <p class="card-text text-muted">Kısa ürün açıklaması.</p>
+                    <div class="mt-auto d-flex justify-content-between align-items-center">
+                        <span class="fs-4 fw-bold text-success">₺199.90</span>
+                        <a href="#" class="btn btn-sm btn-primary"><i class="fas fa-cart-plus me-1"></i> Sepete Ekle</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card h-100 product-card shadow-sm">
+                <img src="/images/default-product.jpg" class="card-img-top" alt="Ürün Adı">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">Ürün Adı 2</h5>
+                    <p class="card-text text-muted">Kısa ürün açıklaması.</p>
+                    <div class="mt-auto d-flex justify-content-between align-items-center">
+                        <span class="fs-4 fw-bold text-success">₺299.00</span>
+                        <a href="#" class="btn btn-sm btn-primary"><i class="fas fa-cart-plus me-1"></i> Sepete Ekle</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card h-100 product-card shadow-sm">
+                <img src="/images/default-product.jpg" class="card-img-top" alt="Ürün Adı">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">Ürün Adı 3</h5>
+                    <p class="card-text text-muted">Kısa ürün açıklaması.</p>
+                    <div class="mt-auto d-flex justify-content-between align-items-center">
+                        <span class="fs-4 fw-bold text-success">₺99.90</span>
+                        <a href="#" class="btn btn-sm btn-primary"><i class="fas fa-cart-plus me-1"></i> Sepete Ekle</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card h-100 product-card shadow-sm">
+                <img src="/images/default-product.jpg" class="card-img-top" alt="Ürün Adı">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">Ürün Adı 4</h5>
+                    <p class="card-text text-muted">Kısa ürün açıklaması.</p>
+                    <div class="mt-auto d-flex justify-content-between align-items-center">
+                        <span class="fs-4 fw-bold text-success">₺399.00</span>
+                        <a href="#" class="btn btn-sm btn-primary"><i class="fas fa-cart-plus me-1"></i> Sepete Ekle</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="text-center mt-4">
+        <a asp-controller="Customer" asp-action="Products" class="btn btn-outline-dark btn-lg">Tüm Ürünleri Gör</a>
+    </div>
+</section>
+
+<section class="container mb-5">
+    <h2 class="text-center mb-4 display-5 fw-bold text-dark-emphasis">Bizden Size Özel</h2>
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        <div class="col">
+            <div class="card h-100 text-center border-primary shadow-sm service-card">
+                <div class="card-body">
+                    <i class="fas fa-truck display-4 text-primary mb-3"></i>
+                    <h5 class="card-title">Hızlı Kargo</h5>
+                    <p class="card-text">Siparişleriniz en hızlı şekilde kapınızda!</p>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card h-100 text-center border-success shadow-sm service-card">
+                <div class="card-body">
+                    <i class="fas fa-undo-alt display-4 text-success mb-3"></i>
+                    <h5 class="card-title">Kolay İade</h5>
+                    <p class="card-text">Memnun kalmazsanız kolayca iade edin.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card h-100 text-center border-info shadow-sm service-card">
+                <div class="card-body">
+                    <i class="fas fa-headset display-4 text-info mb-3"></i>
+                    <h5 class="card-title">7/24 Destek</h5>
+                    <p class="card-text">Her sorunuzda yanınızdayız.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        // İleride özel JavaScript kodları buraya gelebilir, örneğin carousel, lazy loading vb.
+    </script>
+}

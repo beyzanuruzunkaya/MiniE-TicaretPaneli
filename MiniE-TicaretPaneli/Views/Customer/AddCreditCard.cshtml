@@ -1,0 +1,56 @@
+﻿@* Views/Customer/AddCreditCard.cshtml *@
+@model MiniE_TicaretPaneli.Models.CreditCard
+
+@{
+    ViewData["Title"] = "Yeni Kredi Kartı Ekle";
+}
+
+<h1 class="mb-4">Yeni Kredi Kartı Ekle</h1>
+
+<div class="card shadow-sm p-4">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <form asp-action="AddCreditCard" method="post">
+        @Html.AntiForgeryToken()
+
+        <div class="mb-3">
+            <label asp-for="CardHolderName" class="form-label">Kart Sahibi Adı Soyadı</label>
+            <input asp-for="CardHolderName" class="form-control" required />
+            <span asp-validation-for="CardHolderName" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="CardNumberLastFour" class="form-label">Kart Numarası (Son 4 hane veya tamamı için simülasyon)</label>
+            <input asp-for="CardNumberLastFour" class="form-control" placeholder="**** **** **** XXXX" required />
+            <span asp-validation-for="CardNumberLastFour" class="text-danger"></span>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="ExpiryMonth" class="form-label">Son Kullanma Ayı (MM)</label>
+                <input asp-for="ExpiryMonth" class="form-control" placeholder="AA" required maxlength="2" />
+                <span asp-validation-for="ExpiryMonth" class="text-danger"></span>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label asp-for="ExpiryYear" class="form-label">Son Kullanma Yılı (YY)</label>
+                <input asp-for="ExpiryYear" class="form-control" placeholder="YY" required maxlength="2" />
+                <span asp-validation-for="ExpiryYear" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label asp-for="CvvHash" class="form-label">CVV (Sadece Simülasyon)</label>
+            <input asp-for="CvvHash" class="form-control" type="password" placeholder="***" required maxlength="3" />
+            <span asp-validation-for="CvvHash" class="text-danger"></span>
+            <small class="text-muted">Gerçek uygulamada CVV asla veritabanında saklanmaz.</small>
+        </div>
+
+        <hr />
+        <div class="d-flex justify-content-between">
+            <a asp-action="CreditCards" class="btn btn-secondary">Kartlarıma Geri Dön</a>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-plus-circle me-2"></i>Kartı Ekle</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

@@ -1,0 +1,116 @@
+/* Genel Ayarlar */
+body {
+    font-family: 'Poppins', sans-serif; /* Daha modern bir font */
+    background-color: #f0f2f5; /* Hafif bir arka plan rengi */
+    color: #333; /* Genel metin rengi */
+}
+
+/* Footer'ýn sayfanýn altýnda kalmasýný saðlamak için */
+html {
+    position: relative;
+    min-height: 100%;
+}
+
+body {
+    margin-bottom: 80px; /* Footer yüksekliði kadar boþluk */
+}
+
+.footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 60px; /* Footer'ýn yüksekliði */
+    line-height: 60px; /* Dikeyde ortalamak için */
+    background-color: #343a40; /* Koyu tema */
+}
+
+/* Navbar üzerinde metin rengini beyaz yapmak için */
+.navbar-brand, .navbar-nav .nav-link, .navbar-text {
+    color: rgba(255, 255, 255, 0.9); /* Beyaz metin */
+}
+
+    .navbar-nav .nav-link:hover {
+        color: rgba(255, 255, 255, 1); /* Hover'da tam beyaz */
+    }
+
+/* Hero Section Stilleri */
+.hero-section {
+    background-color: #6f42c1; /* Fallback renk */
+    background-size: cover;
+    background-position: center;
+    min-height: 500px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative; /* Ýçerideki metnin üstte olmasý için */
+    z-index: 1; /* Ýçeriðin banner üzerinde görünmesini saðlar */
+    padding: 100px 0; /* Ýç boþluk */
+    margin-top: -60px; /* Navbar'ýn altýnda baþlamasý için eksi margin */
+}
+
+    .hero-section::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.4); /* Resim üzerine hafif koyu overlay */
+        z-index: -1; /* Resmin arkasýnda kalýr */
+    }
+
+    .hero-section h1, .hero-section p {
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); /* Metinlere hafif gölge */
+    }
+
+.custom-btn-glow {
+    box-shadow: 0 0 10px rgba(255, 193, 7, 0.6); /* Sarý butona parlama efekti */
+    transition: box-shadow 0.3s ease-in-out;
+}
+
+    .custom-btn-glow:hover {
+        box-shadow: 0 0 20px rgba(255, 193, 7, 0.8);
+    }
+
+/* Kart Stilleri */
+.category-card img, .product-card img {
+    height: 200px; /* Görsel yüksekliðini sabitle */
+    object-fit: cover; /* Görselin kartý kaplamasýný saðla */
+    border-top-left-radius: calc(.25rem - 1px);
+    border-top-right-radius: calc(.25rem - 1px);
+}
+
+.category-card {
+    border: none;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+    .category-card:hover {
+        transform: translateY(-5px); /* Hover'da hafif yukarý kaydýr */
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+
+.product-card {
+    border: none;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+
+.service-card {
+    border: 1px solid rgba(0,0,0,0.1); /* Hafif border */
+    border-radius: 0.5rem;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+    .service-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+    }
