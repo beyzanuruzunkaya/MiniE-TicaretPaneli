@@ -10,7 +10,8 @@ using Microsoft.AspNetCore.Authentication.Cookies; // CookieAuthenticationDefaul
 using System.Threading.Tasks; // Asenkron metotlar için
 using System; // DateTimeOffset, TimeSpan için
 using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore; // List için
+using Microsoft.EntityFrameworkCore;
+using MiniE_TicaretPaneli.Models.ViewModels; // List için
 
 namespace MiniE_TicaretPaneli.Controllers
 {

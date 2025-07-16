@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using MiniE_TicaretPaneli.Models;
+using MiniE_TicaretPaneli.Models.ViewModels;
 
 namespace MiniE_TicaretPaneli.Controllers
 {

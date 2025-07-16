@@ -1,7 +1,6 @@
-﻿// Models/User.cs
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-
+using MiniE_TicaretPaneli.Models; // UserRole enum için aynı namespace'te ise
 
 namespace MiniE_TicaretPaneli.Models
 {
@@ -13,10 +12,9 @@ namespace MiniE_TicaretPaneli.Models
         [StringLength(50, MinimumLength = 3, ErrorMessage = "Kullanıcı adı en az 3, en fazla 50 karakter olmalıdır.")]
         public string Username { get; set; } = string.Empty;
 
-        // Şifre hash'lenecek, ama doğrulama kurallarını bu alan üzerinde uygulayacağız
         [Required(ErrorMessage = "Şifre alanı zorunludur.")]
         [StringLength(100, MinimumLength = 8, ErrorMessage = "Şifre en az 8 karakter olmalıdır.")]
-        [DataType(DataType.Password)] // Bu alanın şifre olduğunu belirtir (View'da maskeleme vb. için)
+        [DataType(DataType.Password)]
         public string PasswordHash { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Ad alanı zorunludur.")]
@@ -34,14 +32,12 @@ namespace MiniE_TicaretPaneli.Models
 
         [Phone(ErrorMessage = "Geçerli bir telefon numarası giriniz.")]
         [StringLength(20, ErrorMessage = "Telefon numarası en fazla 20 karakter olmalıdır.")]
-        // Telefon numarası null bırakılabilir olarak istendiği için [Required] eklemiyorum
         public string? PhoneNumber { get; set; }
 
-        public UserRole Role { get; set; } // Enum kullanıyorsanız
+        public UserRole Role { get; set; }
 
-        // Navigation properties (eskisi gibi kalır)
         public ICollection<CreditCard> CreditCards { get; set; } = new List<CreditCard>();
         public ICollection<Order> Orders { get; set; } = new List<Order>();
-        public ICollection<ShoppingCart> CartItems { get; set; } = new List<ShoppingCart>(); // ShoppingCart model adı doğruysa
+        public ICollection<ShoppingCart> CartItems { get; set; } = new List<ShoppingCart>();
     }
 }

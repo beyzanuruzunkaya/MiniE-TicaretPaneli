@@ -1,14 +1,13 @@
-﻿// Models/ResetPasswordViewModel.cs
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
-namespace MiniE_TicaretPaneli.Models
+namespace MiniE_TicaretPaneli.Models.ViewModels
 {
     public class ResetPasswordViewModel
     {
-        [Required]
+        [Required(ErrorMessage = "Token zorunludur.")]
         public string Token { get; set; } = string.Empty;
 
-        [Required]
+        [Required(ErrorMessage = "Kullanıcı ID zorunludur.")]
         public int UserId { get; set; }
 
         [Required(ErrorMessage = "Yeni şifre alanı zorunludur.")]

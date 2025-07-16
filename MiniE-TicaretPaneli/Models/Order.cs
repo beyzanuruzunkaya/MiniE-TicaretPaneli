@@ -1,23 +1,23 @@
-﻿namespace MiniE_TicaretPaneli.Models
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+
+namespace MiniE_TicaretPaneli.Models
 {
     public class Order
     {
         public int Id { get; set; }
 
-        public int UserId { get; set; } // Siparişi veren kullanıcının ID'si
-        public User User { get; set; } = null!; // Navigation property
+        public int UserId { get; set; }
+        public User User { get; set; } = null!;
 
-        public DateTime OrderDate { get; set; } // Siparişin verildiği tarih
-        public float TotalAmount { get; set; } // Siparişin toplam tutarı
+        public DateTime OrderDate { get; set; }
+        public float TotalAmount { get; set; }
 
-<<<<<<< HEAD
-        public string Status { get; set; } = "Pending"; // Sipariş durumu (örn: Pending, Shipped, Delivered, Cancelled) status enums
-=======
-        public string Status { get; set; } = "Pending"; // Sipariş durumu (örn: Pending, Shipped, Delivered, Cancelled)
->>>>>>> origin/master
+        [Required]
+        [StringLength(50)]
+        public string Status { get; set; } = "Pending";
 
-        // Bir siparişin birden çok ürün kalemi olabilir (one-to-many relationship)
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }
 }
-

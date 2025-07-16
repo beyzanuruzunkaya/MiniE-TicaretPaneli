@@ -1,8 +1,5 @@
 ﻿// Models/Category.cs
-<<<<<<< HEAD
-=======
 using System.Collections.Generic;
->>>>>>> origin/master
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -12,8 +9,8 @@ namespace MiniE_TicaretPaneli.Models
     {
         public int Id { get; set; }
 
-        [Required]
-        [MaxLength(100)]
+        [Required(ErrorMessage = "Kategori adı zorunludur.")]
+        [StringLength(100, ErrorMessage = "Kategori adı en fazla 100 karakter olmalıdır.")]
         public string Name { get; set; } = string.Empty;
 
         public int? ParentCategoryId { get; set; }
@@ -25,17 +22,16 @@ namespace MiniE_TicaretPaneli.Models
 
         public ICollection<Product> Products { get; set; } = new List<Product>();
 
+        [StringLength(50, ErrorMessage = "Tip en fazla 50 karakter olmalıdır.")]
         public string? Type { get; set; }
+        [StringLength(100, ErrorMessage = "Değer en fazla 100 karakter olmalıdır.")]
         public string? Value { get; set; }
+
+        [StringLength(200, ErrorMessage = "Slug en fazla 200 karakter olmalıdır.")]
         public string? Slug { get; set; }
 
-        // <<<<<< YENİ EKLENTİ: Cinsiyet özelliği >>>>>
-        [MaxLength(50)]
-<<<<<<< HEAD
-        public string? Gender { get; set; } // "Kadın", "Erkek", "Çocuk" veya null (genel kategoriler için)
-=======
-        public string? Gender { get; set; } // "Kadın", "Erkek", "Çocuk", "Unisex" veya null (genel kategoriler için)
->>>>>>> origin/master
+        [StringLength(50, ErrorMessage = "Cinsiyet en fazla 50 karakter olmalıdır.")]
+        public string? Gender { get; set; }
 
         [NotMapped]
         public string FullPath { get; set; } = string.Empty;

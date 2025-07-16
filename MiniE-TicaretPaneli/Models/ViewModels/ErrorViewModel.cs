@@ -1,4 +1,4 @@
-namespace MiniE_TicaretPaneli.Models
+namespace MiniE_TicaretPaneli.Models.ViewModels
 {
     public class ErrorViewModel
     {

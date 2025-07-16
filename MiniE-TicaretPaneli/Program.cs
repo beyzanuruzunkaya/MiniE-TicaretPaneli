@@ -1,85 +1,76 @@
 // Program.cs
-using Microsoft.EntityFrameworkCore; // Bu using ifadesi olmalý
+using Microsoft.EntityFrameworkCore;
 using MiniE_TicaretPaneli.Data; // DbContext'inizin namespace'i
-<<<<<<< HEAD
-using Microsoft.AspNetCore.Authentication.Cookies;
-
-=======
-using MiniE_TicaretPaneli.Models; // SeedData içinde User ve Product kullanýlýyorsa
-using Microsoft.AspNetCore.Authentication.Cookies;
-using System; // TimeSpan için
-using Microsoft.Extensions.DependencyInjection; // IServiceScopeFactory için (SeedData'da kullanýlýyor)
-using Microsoft.Extensions.Logging; // ILogger için (SeedData'da kullanýlýyor)
->>>>>>> origin/master
-
+using MiniE_TicaretPaneli.Models; // Modelleriniz (User, Product vb.) için
+using Microsoft.AspNetCore.Authentication.Cookies; // Çerez tabanlý kimlik doðrulama için
+using System; // TimeSpan gibi tipler için
+using Microsoft.Extensions.DependencyInjection; // IServiceScopeFactory için
+using Microsoft.Extensions.Logging; // ILogger için
+using Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation; // Razor Runtime Compilation için
 
 var builder = WebApplication.CreateBuilder(args);
 
-
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews().AddRazorRuntimeCompilation();
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
-        options.LoginPath = "/Account/Login"; // Giriþ sayfamýzýn yolu
-        options.LogoutPath = "/Account/Logout"; // Çýkýþ sayfamýzýn yolu
-        options.AccessDeniedPath = "/Account/AccessDenied"; // Yetkisiz eriþim yolu
-        options.ExpireTimeSpan = TimeSpan.FromMinutes(30); // Oturum süresi
-        options.SlidingExpiration = true; // Oturumun yenilenip yenilenmeyeceði
+        options.LoginPath = "/Account/Login";
+        options.LogoutPath = "/Account/Logout";
+        options.AccessDeniedPath = "/Account/AccessDenied";
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+        options.SlidingExpiration = true;
     });
 
-builder.Services.AddAuthorization(); // Yetkilendirme servisi
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-
 // Configure the HTTP request pipeline.
-// Geliþtirme ortamý dýþýndaki hatalarý yönetir (Production için)
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
-// Geliþtirme ortamý için detaylý hata sayfasý (Production'da kapatýlmalý)
-if (app.Environment.IsDevelopment()) // <<<< Bu bloðu ekledim veya kontrol ettim
+if (app.Environment.IsDevelopment())
 {
-    app.UseDeveloperExceptionPage();
+    app.UseDeveloperExceptionPage(); // Geliþtirme ortamý için detaylý hata sayfasý
 }
 
+app.UseHttpsRedirection();
+app.UseStaticFiles();
 
-app.UseHttpsRedirection(); // HTTPS yönlendirmesi
-app.UseStaticFiles();     // wwwroot klasöründeki statik dosyalarý (CSS, JS, resimler) sunar
+app.UseRouting();
 
-app.UseRouting();         // <<<< BURASI 1: Routing middleware'i
+app.UseAuthentication(); // Kimlik doðrulama middleware'i (UseRouting'den sonra, UseAuthorization'dan önce)
+app.UseAuthorization();  // Yetkilendirme middleware'i (UseAuthentication'dan sonra)
 
-
-// <<<<<<< BURASI 2: AUTHENTICATION VE AUTHORIZATION MIDDLEWARE'LERÝ >>>>>>>
-// Mutlaka UseRouting() ve app.MapControllerRoute() arasýna gelmeli
-app.UseAuthentication();  // Kullanýcýnýn kimliðini doðrular (çerezi okur)
-app.UseAuthorization();   // Doðrulanmýþ kullanýcýnýn belirli bir kaynaða eriþim yetkisini kontrol eder
-
-
-// Seed Data'yý uygula (bu kýsým genellikle bu sýralamada problem çýkarmaz)
+// Seed Data'yý uygula (Veritabaný boþsa kullanýcýlarý, kategorileri ve ürünleri ekler)
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
-        //SeedData.Initialize(services);
+        var context = services.GetRequiredService<ApplicationDbContext>();
+        // Sadece kullanýcýlar, kategoriler veya ürünler tablosu boþsa seed et
+        if (!context.Users.Any() && !context.Categories.Any() && !context.Products.Any())
+        {
+            SeedData.Initialize(services);
+        }
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred seeding the DB.");
+        logger.LogError(ex, "Uygulama baþlangýcýnda veri doldurma (SeedData) sýrasýnda hata oluþtu.");
     }
 }
 
-// <<<<<<< BURASI 3: ENDPOINT ROUTING (Controller route tanýmý) >>>>>>>
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}"); // Varsayýlan baþlangýç sayfanýz
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
