@@ -13,6 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.ComponentModel.DataAnnotations.Schema;
 
 
 namespace MiniE_TicaretPaneli.Controllers
@@ -45,78 +46,8 @@ namespace MiniE_TicaretPaneli.Controllers
             return View(products);
         }
 
-        [HttpGet]
-        public async Task<IActionResult> AddProduct()
-        {
-            ViewData["Title"] = "Yeni Ürün Ekle";
-            var viewModel = new AdminProductViewModel
-            {
-                MainCategories = await _context.Categories.Where(c => c.ParentCategoryId == null).ToListAsync(),
-                SubCategories = new List<Category>(),
-                AllSizes = GetDefaultSizes(),
-                AllColors = GetDefaultColors()
-            };
-            return View(viewModel);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddProduct(AdminProductViewModel viewModel)
-        {
-            viewModel.Product.AvailableSizes = string.Join(",", viewModel.SelectedSizes);
-            viewModel.Product.AvailableColors = string.Join(",", viewModel.SelectedColors);
-
-            if (ModelState.IsValid)
-            {
-                if (viewModel.ProductImage != null && viewModel.ProductImage.Length > 0)
-                {
-                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
-                    if (!Directory.Exists(uploadsFolder)) { Directory.CreateDirectory(uploadsFolder); }
-                    var uniqueFileName = Guid.NewGuid().ToString() + "_" + viewModel.ProductImage.FileName;
-                    var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-                    using (var fileStream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await viewModel.ProductImage.CopyToAsync(fileStream);
-                    }
-                    viewModel.Product.ImageUrl = "/images/" + uniqueFileName;
-                }
-                else
-                {
-                    viewModel.Product.ImageUrl = "/images/default-product.jpg";
-                }
-
-                _context.Add(viewModel.Product);
-                await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Ürün başarıyla eklendi!";
-                return RedirectToAction(nameof(Products));
-            }
-
-            // Dropdownlar için kategorileri tekrar doldur
-            viewModel.MainCategories = await _context.Categories.Where(c => c.ParentCategoryId == null).ToListAsync();
-            if (viewModel.Product.MainCategoryId != 0 && !viewModel.MainCategories.Any(c => c.Id == viewModel.Product.MainCategoryId))
-            {
-                var selectedMain = await _context.Categories.FirstOrDefaultAsync(c => c.Id == viewModel.Product.MainCategoryId)
-                    ?? new Category { Id = viewModel.Product.MainCategoryId, Name = $"(Geçersiz Kategori: {viewModel.Product.MainCategoryId})" };
-                viewModel.MainCategories.Add(selectedMain);
-            }
-            if (viewModel.Product.MainCategoryId != 0)
-            {
-                viewModel.SubCategories = await _context.Categories.Where(c => c.ParentCategoryId == viewModel.Product.MainCategoryId).ToListAsync();
-            }
-            else
-            {
-                viewModel.SubCategories = new List<Category>();
-            }
-            if (viewModel.Product.SubCategoryId != 0 && !viewModel.SubCategories.Any(c => c.Id == viewModel.Product.SubCategoryId))
-            {
-                var selectedSub = await _context.Categories.FirstOrDefaultAsync(c => c.Id == viewModel.Product.SubCategoryId)
-                    ?? new Category { Id = viewModel.Product.SubCategoryId, Name = $"(Geçersiz Alt Kategori: {viewModel.Product.SubCategoryId})" };
-                viewModel.SubCategories.Add(selectedSub);
-            }
-            viewModel.AllSizes = GetDefaultSizes();
-            viewModel.AllColors = GetDefaultColors();
-            return View(viewModel);
-        }
+        [NotMapped]
+        public string FullPath { get; set; } = string.Empty;
 
         [HttpGet]
         public async Task<IActionResult> EditProduct(int? id)
@@ -181,6 +112,86 @@ namespace MiniE_TicaretPaneli.Controllers
             viewModel.SubCategories = await _context.Categories.Where(c => c.ParentCategoryId != null && c.ParentCategory.ParentCategoryId != null).ToListAsync();
             viewModel.AllSizes = GetDefaultSizes();
             viewModel.AllColors = GetDefaultColors();
+            return View(viewModel);
+        }
+        [HttpGet]
+        public async Task<IActionResult> AddProduct()
+        {
+            ViewData["Title"] = "Yeni Ürün Ekle";
+
+            var viewModel = new AdminProductViewModel
+            {
+                Product = new Product(),
+                MainCategories = await _context.Categories
+                                               .Where(c => c.ParentCategoryId == null)
+                                               .ToListAsync(),
+                SubCategories = new List<Category>(), // Başlangıçta boş
+                AllSizes = GetDefaultSizes(),
+                AllColors = GetDefaultColors()
+            };
+
+            return View(viewModel);
+        }
+
+        // POST: /Admin/AddProduct
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddProduct(AdminProductViewModel viewModel)
+        {
+            // Seçili beden ve renkleri string olarak kaydet
+            viewModel.Product.AvailableSizes = string.Join(",", viewModel.SelectedSizes);
+            viewModel.Product.AvailableColors = string.Join(",", viewModel.SelectedColors);
+
+            if (ModelState.IsValid)
+            {
+                // Fotoğraf yükleme işlemi
+                if (viewModel.ProductImage != null && viewModel.ProductImage.Length > 0)
+                {
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
+                    if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+
+                    var uniqueFileName = Guid.NewGuid().ToString() + "_" + viewModel.ProductImage.FileName;
+                    var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await viewModel.ProductImage.CopyToAsync(fileStream);
+                    }
+
+                    viewModel.Product.ImageUrl = "/images/" + uniqueFileName;
+                }
+                else
+                {
+                    viewModel.Product.ImageUrl = "/images/default-product.jpg";
+                }
+
+                // Veritabanına kaydet
+                _context.Products.Add(viewModel.Product);
+                await _context.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = "Ürün başarıyla eklendi!";
+                return RedirectToAction(nameof(Products));
+            }
+
+            // ❗ Model geçersizse dropdown'ları tekrar doldur (yoksa invalid id hatası alırsın)
+            viewModel.MainCategories = await _context.Categories
+                .Where(c => c.ParentCategoryId == null)
+                .ToListAsync();
+
+            if (viewModel.Product.MainCategoryId != 0)
+            {
+                viewModel.SubCategories = await _context.Categories
+                    .Where(c => c.ParentCategoryId == viewModel.Product.MainCategoryId)
+                    .ToListAsync();
+            }
+            else
+            {
+                viewModel.SubCategories = new List<Category>();
+            }
+
+            viewModel.AllSizes = GetDefaultSizes();
+            viewModel.AllColors = GetDefaultColors();
+
             return View(viewModel);
         }
 

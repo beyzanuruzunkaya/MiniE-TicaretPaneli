@@ -82,23 +82,15 @@
                 @* Ana Kategori dropdown'unu kök kategorilerle dolduruyorum *@
                 <div class="mb-3">
                     <label class="form-label" for="mainCategory">Ana Kategori</label>
-                    <select asp-for="Product.MainCategoryId" class="form-select" id="mainCategory" name="Product.MainCategoryId" required>
+                    <select asp-for="Product.MainCategoryId" class="form-select" id="mainCategory" name="Product.MainCategoryId">
                         <option value="">-- Ana Kategori Seçin --</option>
-                        @foreach (var cat in Model.MainCategories)
-                        {
-                            <option value="@cat.Id">@cat.Name</option>
-                        }
                     </select>
                     <span asp-validation-for="Product.MainCategoryId" class="text-danger"></span>
                 </div>
                 <div class="mb-3">
                     <label class="form-label" for="subCategory">Alt Kategori</label>
-                    <select asp-for="Product.SubCategoryId" class="form-select" id="subCategory" name="Product.SubCategoryId" required>
+                    <select asp-for="Product.SubCategoryId" class="form-select" id="subCategory" name="Product.SubCategoryId">
                         <option value="">-- Alt Kategori Seçin --</option>
-                        @foreach (var cat in Model.SubCategories)
-                        {
-                            <option value="@cat.Id">@cat.Name</option>
-                        }
                     </select>
                     <span asp-validation-for="Product.SubCategoryId" class="text-danger"></span>
                 </div>
@@ -148,5 +140,53 @@
 </div>
 
 @section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var $mainCategory = document.getElementById('mainCategory');
+            var $subCategory = document.getElementById('subCategory');
+            var $debugMain = document.getElementById('debugMainCategoryId');
+            var $debugSub = document.getElementById('debugSubCategoryId');
+            var $form = document.getElementById('addProductForm');
+            if ($mainCategory) {
+                fetch('/Admin/GetRootCategories')
+                    .then(response => response.json())
+                    .then(data => {
+                        $mainCategory.innerHTML = '<option value="">-- Ana Kategori Seçin --</option>';
+                        data.forEach(function (cat) {
+                            var option = document.createElement('option');
+                            option.value = cat.id;
+                            option.text = cat.name;
+                            $mainCategory.appendChild(option);
+                        });
+                    });
+                $mainCategory.addEventListener('change', function () {
+                    var mainCategoryId = this.value;
+                    if ($debugMain) $debugMain.value = mainCategoryId;
+                    $subCategory.innerHTML = '<option value="">-- Alt Kategori Seçin --</option>';
+                    if (mainCategoryId) {
+                        fetch('/Admin/GetSubcategoriesByMainCategory?mainCategoryId=' + mainCategoryId)
+                            .then(response => response.json())
+                            .then(data => {
+                                data.forEach(function (cat) {
+                                    var option = document.createElement('option');
+                                    option.value = cat.id;
+                                    option.text = cat.name;
+                                    $subCategory.appendChild(option);
+                                });
+                            });
+                    }
+                });
+                $subCategory.addEventListener('change', function () {
+                    if ($debugSub) $debugSub.value = this.value;
+                });
+            }
+            if ($form) {
+                $form.addEventListener('submit', function () {
+                    if ($mainCategory && $debugMain) $debugMain.value = $mainCategory.value;
+                    if ($subCategory && $debugSub) $debugSub.value = $subCategory.value;
+                });
+            }
+        });
+    </script>
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 }

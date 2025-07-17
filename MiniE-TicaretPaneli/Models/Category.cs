@@ -10,7 +10,7 @@ namespace MiniE_TicaretPaneli.Models
         public int Id { get; set; }
 
         [Required(ErrorMessage = "Kategori adı zorunludur.")]
-        [StringLength(100, ErrorMessage = "Kategori adı en fazla 100 karakter olmalıdır.")]
+        [StringLength(100)]
         public string Name { get; set; } = string.Empty;
 
         public int? ParentCategoryId { get; set; }
@@ -22,13 +22,16 @@ namespace MiniE_TicaretPaneli.Models
 
         public ICollection<Product> Products { get; set; } = new List<Product>();
 
-        [StringLength(200, ErrorMessage = "Slug en fazla 200 karakter olmalıdır.")]
+        [StringLength(200)]
         public string? Slug { get; set; }
 
-        [StringLength(50, ErrorMessage = "Cinsiyet en fazla 50 karakter olmalıdır.")]
+        [StringLength(50)]
         public string? Gender { get; set; }
 
         [NotMapped]
+        public bool IsMainCategory => ParentCategoryId == null;
+
+        [NotMapped] // ❗Bunu ekle veya EF migration ile veritabanına ekle
         public string FullPath { get; set; } = string.Empty;
     }
 }

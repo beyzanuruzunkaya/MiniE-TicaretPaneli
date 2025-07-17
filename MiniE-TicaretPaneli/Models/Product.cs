@@ -33,11 +33,11 @@ namespace MiniE_TicaretPaneli.Models
 
         [Required(ErrorMessage = "Ana kategori seçimi zorunludur.")]
         public int MainCategoryId { get; set; }
-        public Category MainCategory { get; set; } = null!;
+        public Category? MainCategory { get; set; } = null!;
 
         [Required(ErrorMessage = "Alt kategori seçimi zorunludur.")]
         public int SubCategoryId { get; set; }
-        public Category SubCategory { get; set; } = null!;
+        public Category? SubCategory { get; set; } = null!;
 
         [StringLength(100, ErrorMessage = "Marka en fazla 100 karakter olmalıdır.")]
         public string? Brand { get; set; }
