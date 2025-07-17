@@ -1,12 +1,14 @@
 // Program.cs
 using Microsoft.EntityFrameworkCore;
 using MiniE_TicaretPaneli.Data; // DbContext'inizin namespace'i
-using MiniE_TicaretPaneli.Models; // Modelleriniz (User, Product vb.) için
-using Microsoft.AspNetCore.Authentication.Cookies; // Çerez tabanlý kimlik doðrulama için
-using System; // TimeSpan gibi tipler için
-using Microsoft.Extensions.DependencyInjection; // IServiceScopeFactory için
-using Microsoft.Extensions.Logging; // ILogger için
-using Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation; // Razor Runtime Compilation için
+using MiniE_TicaretPaneli.Models; // Modelleriniz (User, Product vb.) iï¿½in
+using Microsoft.AspNetCore.Authentication.Cookies; // ï¿½erez tabanlï¿½ kimlik doï¿½rulama iï¿½in
+using System; // TimeSpan gibi tipler iï¿½in
+using Microsoft.Extensions.DependencyInjection; // IServiceScopeFactory iï¿½in
+using Microsoft.Extensions.Logging; // ILogger iï¿½in
+using Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation; // Razor Runtime Compilation iï¿½in
+using Microsoft.AspNetCore.CookiePolicy; // CookiePolicyOptions iin
+using Microsoft.AspNetCore.Antiforgery; // Antiforgery iin
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +18,13 @@ builder.Services.AddControllersWithViews().AddRazorRuntimeCompilation();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// Ã‡erezlerin sadece HTTPS Ã¼zerinden gÃ¶nderilmesini zorunlu kÄ±l
+builder.Services.Configure<CookiePolicyOptions>(options =>
+{
+    options.Secure = Microsoft.AspNetCore.Http.CookieSecurePolicy.Always;
+});
+
+// Cookie Authentication'da SecurePolicy ekle
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -24,11 +33,25 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.AccessDeniedPath = "/Account/AccessDenied";
         options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
         options.SlidingExpiration = true;
+        options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.Always;
     });
+
+// Antiforgery Ã§erezleri iÃ§in Secure ayarÄ±
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.Always;
+});
 
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+
+// Seed example categories
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -38,34 +61,31 @@ if (!app.Environment.IsDevelopment())
 }
 if (app.Environment.IsDevelopment())
 {
-    app.UseDeveloperExceptionPage(); // Geliþtirme ortamý için detaylý hata sayfasý
+    app.UseDeveloperExceptionPage(); // Geliï¿½tirme ortamï¿½ iï¿½in detaylï¿½ hata sayfasï¿½
 }
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
+app.UseCookiePolicy(); // CookiePolicyOptions middleware'i
 app.UseRouting();
 
-app.UseAuthentication(); // Kimlik doðrulama middleware'i (UseRouting'den sonra, UseAuthorization'dan önce)
+app.UseAuthentication(); // Kimlik dorulama middleware'i (UseRouting'den sonra, UseAuthorization'dan ï¿½nce)
 app.UseAuthorization();  // Yetkilendirme middleware'i (UseAuthentication'dan sonra)
 
-// Seed Data'yý uygula (Veritabaný boþsa kullanýcýlarý, kategorileri ve ürünleri ekler)
+// Seed Data'yï¿½ uygula (Veritabanï¿½ boï¿½sa kullanï¿½cï¿½larï¿½, kategorileri ve ï¿½rï¿½nleri ekler)
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
-        // Sadece kullanýcýlar, kategoriler veya ürünler tablosu boþsa seed et
-        if (!context.Users.Any() && !context.Categories.Any() && !context.Products.Any())
-        {
-            SeedData.Initialize(services);
-        }
+        
+       
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Uygulama baþlangýcýnda veri doldurma (SeedData) sýrasýnda hata oluþtu.");
+        logger.LogError(ex, "Uygulama baï¿½langï¿½cï¿½nda veri doldurma (SeedData) sï¿½rasï¿½nda hata oluï¿½tu.");
     }
 }
 

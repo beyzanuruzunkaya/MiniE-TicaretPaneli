@@ -7,61 +7,105 @@
 
 <h1 class="mb-4">Yeni Ürün Ekle</h1>
 
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger">
+        @foreach (var key in ViewData.ModelState.Keys)
+        {
+            foreach (var error in ViewData.ModelState[key].Errors)
+            {
+                <div>@key: @error.ErrorMessage</div>
+            }
+        }
+    </div>
+}
+
 <div class="card shadow-sm p-4">
-    <form asp-action="AddProduct" method="post" enctype="multipart/form-data">
+    <form asp-action="AddProduct" method="post" enctype="multipart/form-data" id="addProductForm">
         @Html.AntiForgeryToken()
+        <input type="hidden" name="Product.MainCategoryId" id="debugMainCategoryId" />
+        <input type="hidden" name="Product.SubCategoryId" id="debugSubCategoryId" />
         <div asp-validation-summary="All" class="text-danger mb-3"></div>
 
         <div class="row">
             <div class="col-md-6">
-                @* ... (Name, Description, Price, Stock, ProductImage) ... *@
-            </div>
-            <div class="col-md-6">
                 <div class="mb-3">
-                    <label asp-for="Product.Gender" class="form-label">Cinsiyet</label>
-                    <select asp-for="Product.Gender" class="form-select" id="productGender">
-                        <option value="">-- Seçiniz --</option>
+                    <label asp-for="ProductImage" class="form-label">Ürün Fotoğrafı</label>
+                    <input asp-for="ProductImage" type="file" class="form-control" accept="image/*" />
+                    <span asp-validation-for="ProductImage" class="text-danger"></span>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.ExistingImageUrl))
+                {
+                    <div class="mb-3">
+                        <img src="@Model.ExistingImageUrl" alt="Ürün Fotoğrafı" class="img-thumbnail" style="max-width: 100%; height: auto;" />
+                    </div>
+                }
+                <div class="mb-3">
+                    <label asp-for="Product.Name" class="form-label">Ürün Adı</label>
+                    <input asp-for="Product.Name" class="form-control" placeholder="Ürün Adı" id="Product_Name" autocomplete="off" />
+                    <span asp-validation-for="Product.Name" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Product.Price" class="form-label">Fiyat</label>
+                    <input asp-for="Product.Price" class="form-control" placeholder="Fiyat" id="Product_Price" autocomplete="off" />
+                    <span asp-validation-for="Product.Price" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Product.Stock" class="form-label">Stok</label>
+                    <input asp-for="Product.Stock" class="form-control" placeholder="Stok" id="Product_Stock" autocomplete="off" />
+                    <span asp-validation-for="Product.Stock" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Product.Brand" class="form-label">Marka</label>
+                    <input asp-for="Product.Brand" class="form-control" placeholder="Marka" id="Product_Brand" autocomplete="off" />
+                    <span asp-validation-for="Product.Brand" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Product.Gender" class="form-label">Cinsiyet (Metin)</label>
+                    <select asp-for="Product.Gender" class="form-select" id="Product_Gender" autocomplete="sex">
+                        <option value="">-- Cinsiyet Seçiniz --</option>
                         <option value="Kadın">Kadın</option>
                         <option value="Erkek">Erkek</option>
                         <option value="Çocuk">Çocuk</option>
-<<<<<<< HEAD
-                       
-=======
-                        @* Unisex seçeneği kaldırıldı *@
->>>>>>> origin/master
                     </select>
                     <span asp-validation-for="Product.Gender" class="text-danger"></span>
                 </div>
+            </div>
+            <div class="col-md-6">
                 <div class="mb-3">
-                    <label asp-for="Product.MainCategoryId" class="form-label">Ana Kategori</label>
-                    <select asp-for="Product.MainCategoryId" class="form-select" id="mainCategory">
+                    <label asp-for="Product.Description" class="form-label">Açıklama</label>
+                    <textarea asp-for="Product.Description" class="form-control" placeholder="Açıklama"></textarea>
+                    <span asp-validation-for="Product.Description" class="text-danger"></span>
+                </div>
+                
+
+                @* Ana Kategori dropdown'unu kök kategorilerle dolduruyorum *@
+                <div class="mb-3">
+                    <label class="form-label" for="mainCategory">Ana Kategori</label>
+                    <select asp-for="Product.MainCategoryId" class="form-select" id="mainCategory" name="Product.MainCategoryId" required>
                         <option value="">-- Ana Kategori Seçin --</option>
-                        @* Ana kategoriler JS ile dinamik olarak yüklenecek *@
+                        @foreach (var cat in Model.MainCategories)
+                        {
+                            <option value="@cat.Id">@cat.Name</option>
+                        }
                     </select>
                     <span asp-validation-for="Product.MainCategoryId" class="text-danger"></span>
                 </div>
                 <div class="mb-3">
-                    <label asp-for="Product.SubCategoryId" class="form-label">Alt Kategori</label>
-                    <select asp-for="Product.SubCategoryId" class="form-select" id="subCategory">
+                    <label class="form-label" for="subCategory">Alt Kategori</label>
+                    <select asp-for="Product.SubCategoryId" class="form-select" id="subCategory" name="Product.SubCategoryId" required>
                         <option value="">-- Alt Kategori Seçin --</option>
-                        @* Alt kategoriler JS ile dinamik olarak yüklenecek *@
+                        @foreach (var cat in Model.SubCategories)
+                        {
+                            <option value="@cat.Id">@cat.Name</option>
+                        }
                     </select>
                     <span asp-validation-for="Product.SubCategoryId" class="text-danger"></span>
                 </div>
                 <div class="mb-3">
-                    <label asp-for="Product.Brand" class="form-label"></label>
-                    <input asp-for="Product.Brand" class="form-control" />
-                    <span asp-validation-for="Product.Brand" class="text-danger"></span>
-                </div>
-                <div class="mb-3">
-                    <label asp-for="Product.Material" class="form-label"></label>
-                    <input asp-for="Product.Material" class="form-control" />
+                    <label asp-for="Product.Material" class="form-label">Materyal</label>
+                    <input asp-for="Product.Material" class="form-control" placeholder="Materyal" />
                     <span asp-validation-for="Product.Material" class="text-danger"></span>
-                </div>
-                <div class="mb-3">
-                    <label asp-for="Product.Pattern" class="form-label"></label>
-                    <input asp-for="Product.Pattern" class="form-control" />
-                    <span asp-validation-for="Product.Pattern" class="text-danger"></span>
                 </div>
             </div>
         </div>
@@ -104,92 +148,5 @@
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
-    <script>
-        $(document).ready(function () {
-            // Tüm ana kategorileri JavaScript'e al
-            var allMainCategories = @Html.Raw(Json.Serialize(Model.MainCategories));
-
-            // Ana kategori dropdown'unu güncelleyen fonksiyon
-            function updateMainCategories(selectedGender, initialMainCategoryId = null) {
-                var mainCategoryDropdown = $('#mainCategory');
-                mainCategoryDropdown.empty();
-                mainCategoryDropdown.append($('<option></option>').val('').text('-- Ana Kategori Seçin --'));
-
-                if (selectedGender) {
-                    $.each(allMainCategories, function (index, category) {
-                        // Kategori Gender alanı selectedGender ile eşleşiyorsa ekle
-                        if (category.gender === selectedGender) {
-                            var option = $('<option></option>').val(category.id).text(category.name);
-                            if (category.id == initialMainCategoryId) {
-                                option.attr('selected', 'selected');
-                            }
-                            mainCategoryDropdown.append(option);
-                        }
-                    });
-                }
-            }
-
-            // Alt kategori yükleyen fonksiyon (mevcut haliyle)
-            function updateSubCategories(mainCategoryId, initialSubCategoryId = null) {
-                var subCategoryDropdown = $('#subCategory');
-                subCategoryDropdown.empty();
-                subCategoryDropdown.append($('<option></option>').val('').text('-- Alt Kategori Seçin --'));
-
-                if (mainCategoryId) {
-                    $.ajax({
-                        url: '@Url.Action("GetSubcategoriesByMainCategory", "Admin")',
-                        type: 'GET',
-                        data: { mainCategoryId: mainCategoryId },
-                        success: function (data) {
-                            $.each(data, function (index, subcategory) {
-                                var option = $('<option></option>').val(subcategory.id).text(subcategory.name);
-                                if (subcategory.id == initialSubCategoryId) {
-                                    option.attr('selected', 'selected');
-                                }
-                                subCategoryDropdown.append(option);
-                            });
-                        },
-                        error: function () {
-                            console.log("Alt kategoriler yüklenirken hata oluştu.");
-                        }
-                    });
-                }
-            }
-
-            // Cinsiyet seçimi değiştiğinde Ana Kategorileri güncelle
-            $('#productGender').change(function () {
-                var selectedGender = $(this).val();
-                updateMainCategories(selectedGender); // Ana kategorileri yeniden yükle
-                $('#mainCategory').val(''); // Ana kategori seçimini sıfırla
-                $('#subCategory').empty().append($('<option></option>').val('').text('-- Alt Kategori Seçin --')); // Alt kategorileri sıfırla
-            });
-
-            // Sayfa yüklendiğinde mevcut cinsiyet seçimine göre Ana Kategorileri ve Alt Kategorileri yükle
-            var initialGender = $('#productGender').val();
-            var initialMainCategoryId = '@(Model.Product.MainCategoryId)'; // Düzenleme modunda seçili ana kategori ID
-            var initialSubCategoryId = '@(Model.Product.SubCategoryId)'; // Düzenleme modunda seçili alt kategori ID
-
-            // Eğer cinsiyet seçili ise ana kategorileri doldur
-            if (initialGender) {
-                updateMainCategories(initialGender, initialMainCategoryId);
-                // Eğer başlangıç ana kategorisi varsa, alt kategorileri de yükle
-                if (initialMainCategoryId) {
-                    updateSubCategories(initialMainCategoryId, initialSubCategoryId);
-                }
-            } else {
-                // Hiçbir cinsiyet seçili değilse dropdown'ları boşalt
-                $('#mainCategory').empty().append($('<option></option>').val('').text('-- Ana Kategori Seçin --'));
-                $('#subCategory').empty().append($('<option></option>').val('').text('-- Alt Kategori Seçin --'));
-            }
-
-            // Ana kategori değiştiğinde alt kategorileri yükle
-            $('#mainCategory').change(function () {
-                var mainCategoryId = $(this).val();
-                updateSubCategories(mainCategoryId);
-            });
-        });
-    </script>
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 }

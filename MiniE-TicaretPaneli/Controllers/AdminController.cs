@@ -39,7 +39,6 @@ namespace MiniE_TicaretPaneli.Controllers
         {
             ViewData["Title"] = "Ürün Yönetimi";
             var products = await _context.Products
-                                       .Include(p => p.GenderCategory)
                                        .Include(p => p.MainCategory)
                                        .Include(p => p.SubCategory)
                                        .ToListAsync();
@@ -50,19 +49,10 @@ namespace MiniE_TicaretPaneli.Controllers
         public async Task<IActionResult> AddProduct()
         {
             ViewData["Title"] = "Yeni Ürün Ekle";
-
             var viewModel = new AdminProductViewModel
             {
-                GenderCategories = await _context.Categories
-                                                 .Where(c => c.ParentCategoryId == null && (c.Type == "Cinsiyet" || c.Type == "Yaş Grubu"))
-                                                 .ToListAsync(),
-                MainCategories = await _context.Categories
-                                               .Where(c => c.ParentCategory != null && (c.ParentCategory.Type == "Cinsiyet" || c.ParentCategory.Type == "Yaş Grubu"))
-                                               .ToListAsync(),
-                SubCategories = await _context.Categories
-                                              .Where(c => c.ParentCategory != null && c.ParentCategory.ParentCategory != null && (c.ParentCategory.Type == "Ürün Grubu" || c.ParentCategory.Type == "Yaş Grubu Kategori"))
-                                              .ToListAsync(),
-
+                MainCategories = await _context.Categories.Where(c => c.ParentCategoryId == null).ToListAsync(),
+                SubCategories = new List<Category>(),
                 AllSizes = GetDefaultSizes(),
                 AllColors = GetDefaultColors()
             };
@@ -101,16 +91,28 @@ namespace MiniE_TicaretPaneli.Controllers
                 return RedirectToAction(nameof(Products));
             }
 
-            viewModel.GenderCategories = await _context.Categories
-                                                 .Where(c => c.ParentCategoryId == null && (c.Type == "Cinsiyet" || c.Type == "Yaş Grubu"))
-                                                 .ToListAsync();
-            viewModel.MainCategories = await _context.Categories
-                                               .Where(c => c.ParentCategory != null && (c.ParentCategory.Type == "Cinsiyet" || c.ParentCategory.Type == "Yaş Grubu"))
-                                               .ToListAsync();
-            viewModel.SubCategories = await _context.Categories
-                                              .Where(c => c.ParentCategory != null && c.ParentCategory.ParentCategory != null && (c.ParentCategory.Type == "Ürün Grubu" || c.ParentCategory.Type == "Yaş Grubu Kategori"))
-                                              .ToListAsync();
-
+            // Dropdownlar için kategorileri tekrar doldur
+            viewModel.MainCategories = await _context.Categories.Where(c => c.ParentCategoryId == null).ToListAsync();
+            if (viewModel.Product.MainCategoryId != 0 && !viewModel.MainCategories.Any(c => c.Id == viewModel.Product.MainCategoryId))
+            {
+                var selectedMain = await _context.Categories.FirstOrDefaultAsync(c => c.Id == viewModel.Product.MainCategoryId)
+                    ?? new Category { Id = viewModel.Product.MainCategoryId, Name = $"(Geçersiz Kategori: {viewModel.Product.MainCategoryId})" };
+                viewModel.MainCategories.Add(selectedMain);
+            }
+            if (viewModel.Product.MainCategoryId != 0)
+            {
+                viewModel.SubCategories = await _context.Categories.Where(c => c.ParentCategoryId == viewModel.Product.MainCategoryId).ToListAsync();
+            }
+            else
+            {
+                viewModel.SubCategories = new List<Category>();
+            }
+            if (viewModel.Product.SubCategoryId != 0 && !viewModel.SubCategories.Any(c => c.Id == viewModel.Product.SubCategoryId))
+            {
+                var selectedSub = await _context.Categories.FirstOrDefaultAsync(c => c.Id == viewModel.Product.SubCategoryId)
+                    ?? new Category { Id = viewModel.Product.SubCategoryId, Name = $"(Geçersiz Alt Kategori: {viewModel.Product.SubCategoryId})" };
+                viewModel.SubCategories.Add(selectedSub);
+            }
             viewModel.AllSizes = GetDefaultSizes();
             viewModel.AllColors = GetDefaultColors();
             return View(viewModel);
@@ -126,9 +128,8 @@ namespace MiniE_TicaretPaneli.Controllers
             var viewModel = new AdminProductViewModel
             {
                 Product = product,
-                GenderCategories = await _context.Categories.Where(c => c.ParentCategoryId == null && (c.Type == "Cinsiyet" || c.Type == "Yaş Grubu")).ToListAsync(),
-                MainCategories = await _context.Categories.Where(c => c.ParentCategory != null && (c.ParentCategory.Type == "Cinsiyet" || c.ParentCategory.Type == "Yaş Grubu")).ToListAsync(),
-                SubCategories = await _context.Categories.Where(c => c.ParentCategory != null && c.ParentCategory.ParentCategory != null && (c.ParentCategory.Type == "Ürün Grubu" || c.ParentCategory.Type == "Yaş Grubu Kategori")).ToListAsync(),
+                MainCategories = await _context.Categories.Where(c => c.ParentCategoryId != null).ToListAsync(),
+                SubCategories = await _context.Categories.Where(c => c.ParentCategoryId != null && c.ParentCategory.ParentCategoryId != null).ToListAsync(),
                 AllSizes = GetDefaultSizes(),
                 AllColors = GetDefaultColors(),
                 ExistingImageUrl = product.ImageUrl,
@@ -176,9 +177,8 @@ namespace MiniE_TicaretPaneli.Controllers
                 }
                 return RedirectToAction(nameof(Products));
             }
-            viewModel.GenderCategories = await _context.Categories.Where(c => c.ParentCategoryId == null && (c.Type == "Cinsiyet" || c.Type == "Yaş Grubu")).ToListAsync();
-            viewModel.MainCategories = await _context.Categories.Where(c => c.ParentCategory != null && (c.ParentCategory.Type == "Cinsiyet" || c.ParentCategory.Type == "Yaş Grubu")).ToListAsync();
-            viewModel.SubCategories = await _context.Categories.Where(c => c.ParentCategory != null && c.ParentCategory.ParentCategory != null && (c.ParentCategory.Type == "Ürün Grubu" || c.ParentCategory.Type == "Yaş Grubu Kategori")).ToListAsync();
+            viewModel.MainCategories = await _context.Categories.Where(c => c.ParentCategoryId != null).ToListAsync();
+            viewModel.SubCategories = await _context.Categories.Where(c => c.ParentCategoryId != null && c.ParentCategory.ParentCategoryId != null).ToListAsync();
             viewModel.AllSizes = GetDefaultSizes();
             viewModel.AllColors = GetDefaultColors();
             return View(viewModel);
@@ -188,7 +188,7 @@ namespace MiniE_TicaretPaneli.Controllers
         public async Task<IActionResult> DeleteProduct(int? id)
         {
             if (id == null) { return NotFound(); }
-            var product = await _context.Products.Include(p => p.GenderCategory).Include(p => p.MainCategory).Include(p => p.SubCategory).FirstOrDefaultAsync(m => m.Id == id);
+            var product = await _context.Products.Include(p => p.MainCategory).Include(p => p.SubCategory).FirstOrDefaultAsync(m => m.Id == id);
             if (product == null) { return NotFound(); }
             ViewData["Title"] = "Ürün Sil";
             return View(product);
@@ -279,82 +279,71 @@ namespace MiniE_TicaretPaneli.Controllers
             var categories = await _context.Categories.Include(c => c.ParentCategory).ToListAsync();
             return View(categories);
         }
+// GET: /Admin/AddCategory
 [HttpGet]
-        public async Task<IActionResult> AddCategory()
+public async Task<IActionResult> AddCategory()
+{
+    ViewData["Title"] = "Yeni Kategori Ekle";
+    // Sadece kök kategoriler (ParentCategoryId == null) üst kategori olarak gösterilsin
+    var mainCategories = await _context.Categories.Where(c => c.ParentCategoryId == null).ToListAsync();
+    var viewModel = new AddCategoryViewModel
+    {
+        AllCategoriesForJs = await _context.Categories.Include(c => c.ParentCategory).ToListAsync(),
+        AvailableParentCategories = new List<SelectListItem>(),
+        MainCategories = mainCategories
+    };
+    return View(viewModel);
+}
+
+// POST: /Admin/AddCategory
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> AddCategory(AddCategoryViewModel viewModel)
+{
+    var newCategory = new Category
+    {
+        Name = viewModel.Name,
+        ParentCategoryId = viewModel.ParentCategoryId,
+        Gender = viewModel.Gender,
+        Slug = viewModel.Slug
+    };
+    if (string.IsNullOrEmpty(newCategory.Slug))
+    {
+        newCategory.Slug = newCategory.Name.ToLower().Replace(" ", "-").Replace("/", "-");
+    }
+    if (ModelState.IsValid)
+    {
+        if (newCategory.ParentCategoryId.HasValue)
         {
-            ViewData["Title"] = "Yeni Kategori Ekle";
-            var viewModel = new AddCategoryViewModel
+            if (_context.Categories.Any(c => c.Name == newCategory.Name && c.ParentCategoryId == newCategory.ParentCategoryId && c.Gender == newCategory.Gender))
             {
-                // Tüm kategorileri çekip JS'ye gönderiyoruz, JS filtrelemeyi yapacak
-                AllCategoriesForJs = await _context.Categories.Include(c => c.ParentCategory).ToListAsync(),
-                // Başlangıçta üst kategori listesi boş olabilir, JS dolduracak
-                AvailableParentCategories = new List<SelectListItem>()
-            };
-            return View(viewModel);
+                ModelState.AddModelError("Name", "Bu isimde bu cinsiyete ait bir alt kategori bu üst kategori altında zaten mevcut.");
+            }
         }
-
-        // POST: /Admin/AddCategory (Yeni Kategori Kaydetme - Yeniden Yazıldı)
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddCategory(AddCategoryViewModel viewModel)
+        else
         {
-            // ViewModel'deki alanları kullanarak yeni bir Category objesi oluşturuyoruz
-            var newCategory = new Category
+            if (_context.Categories.Any(c => c.Name == newCategory.Name && c.ParentCategoryId == null && c.Gender == newCategory.Gender))
             {
-                Name = viewModel.Name,
-                ParentCategoryId = viewModel.ParentCategoryId,
-                Gender = viewModel.Gender,
-                Type = viewModel.Type,
-                Value = viewModel.Value,
-                Slug = viewModel.Slug
-            };
-
-            // Slug'ı otomatik oluştur (eğer boşsa)
-            if (string.IsNullOrEmpty(newCategory.Slug))
-            {
-                newCategory.Slug = newCategory.Name.ToLower().Replace(" ", "-").Replace("/", "-"); // / işaretini de temizle
+                ModelState.AddModelError("Name", "Bu isimde bu cinsiyete ait bir ana kategori zaten mevcut.");
             }
-
-            // Model doğrulama ve sunucu tarafı kontrolleri
-            // Gerekli alanlar ViewModel'de [Required] ile işaretlendi
-            if (ModelState.IsValid)
-            {
-                // Benzersizlik kontrolleri
-                if (newCategory.ParentCategoryId.HasValue) // Alt kategori ekleniyorsa
-                {
-                    if (_context.Categories.Any(c => c.Name == newCategory.Name && c.ParentCategoryId == newCategory.ParentCategoryId))
-                    {
-                        ModelState.AddModelError("Name", "Bu isimde bir alt kategori bu üst kategori altında zaten mevcut.");
-                    }
-                }
-                else // Ana kategori ekleniyorsa (ParentId null)
-                {
-                    if (_context.Categories.Any(c => c.Name == newCategory.Name && c.ParentCategoryId == null))
-                    {
-                        ModelState.AddModelError("Name", "Bu isimde bir ana kategori zaten mevcut.");
-                    }
-                }
-
-                if (ModelState.IsValid) // Tekrar kontrol et
-                {
-                    _context.Add(newCategory);
-                    await _context.SaveChangesAsync();
-                    TempData["SuccessMessage"] = "Kategori başarıyla eklendi!";
-                    return RedirectToAction(nameof(Categories)); // Kategori listeleme sayfasına yönlendir
-                }
-            }
-
-            // Doğrulama hatası varsa, ViewModel'i View'a geri göndererek formu tekrar doldur
-            viewModel.AllCategoriesForJs = await _context.Categories.Include(c => c.ParentCategory).ToListAsync();
-            // Hata dönüşünde dropdown'ları doğru doldurmak için,
-            // seçili kategori seviyesine göre üst kategori listesini yeniden oluştur
-            if (!string.IsNullOrEmpty(viewModel.CategoryLevelType))
-            {
-                 viewModel.AvailableParentCategories = await GetParentCategoriesForLevel(viewModel.CategoryLevelType, viewModel.Gender).ToListAsync();
-            }
-
-            return View(viewModel);
         }
+        if (ModelState.IsValid)
+        {
+            _context.Add(newCategory);
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Kategori başarıyla eklendi!";
+            return RedirectToAction(nameof(Categories));
+        }
+    }
+    viewModel.AllCategoriesForJs = await _context.Categories.Include(c => c.ParentCategory).ToListAsync();
+    // Sadece kök kategoriler (ParentCategoryId == null) üst kategori olarak gösterilsin
+    viewModel.MainCategories = await _context.Categories.Where(c => c.ParentCategoryId == null).ToListAsync();
+    if (!string.IsNullOrEmpty(viewModel.CategoryLevelType))
+    {
+        viewModel.AvailableParentCategories = await GetParentCategoriesForLevel(viewModel.CategoryLevelType, viewModel.Gender).ToListAsync();
+    }
+    return View(viewModel);
+}
         
         // Yeni Yardımcı Metot: Kategori Seviyesine Göre Üst Kategorileri Getirme
         // Bu metot AddCategory POST'unda hata durumunda ViewBag'i doldurmak için ve JS'e data sağlamak için kullanılacak.
@@ -365,7 +354,7 @@ namespace MiniE_TicaretPaneli.Controllers
             if (categoryLevelType == "MainGroup") // Kullanıcı Ana Kategori (Level 2) eklemek istiyor
             {
                 // Üst kategori olarak sadece cinsiyet/yaş grubu kategorilerini göster (Level 1)
-                query = query.Where(c => c.ParentCategoryId == null && (c.Type == "Cinsiyet" || c.Type == "Yaş Grubu"));
+                query = query.Where(c => c.ParentCategoryId == null && (c.Gender == "Kadın" || c.Gender == "Erkek" || c.Gender == "Çocuk"));
                 if (!string.IsNullOrEmpty(gender))
                 {
                     // Cinsiyet seçili ise sadece ilgili cinsiyet kategorisini filtrele
@@ -377,7 +366,7 @@ namespace MiniE_TicaretPaneli.Controllers
             else if (categoryLevelType == "ProductType") // Kullanıcı Alt Kategori (Level 3) eklemek istiyor
             {
                 // Üst kategori olarak sadece Ürün Grubu veya Yaş Grubu Kategori kategorilerini göster (Level 2)
-                query = query.Where(c => c.ParentCategory != null && (c.Type == "Ürün Grubu" || c.Type == "Yaş Grubu Kategori"));
+                query = query.Where(c => c.ParentCategoryId != null && (c.Gender == "Ürün Grubu" || c.Gender == "Yaş Grubu Kategori"));
                 if (!string.IsNullOrEmpty(gender))
                 {
                     // Eğer cinsiyet seçiliyse, o cinsiyete ait seviye 2 kategorileri getir
@@ -420,9 +409,9 @@ namespace MiniE_TicaretPaneli.Controllers
                 {
                     if (category.ParentCategoryId.HasValue)
                     {
-                        if (_context.Categories.Any(c => c.Name == category.Name && c.ParentCategoryId == category.ParentCategoryId && c.Id != category.Id))
+                        if (_context.Categories.Any(c => c.Name == category.Name && c.ParentCategoryId == category.ParentCategoryId && c.Gender == category.Gender && c.Id != category.Id))
                         {
-                            ModelState.AddModelError("Name", "Bu isimde bir alt kategori bu ana kategori altında zaten mevcut.");
+                            ModelState.AddModelError("Name", "Bu isimde bu cinsiyete ait bir alt kategori bu ana kategori altında zaten mevcut.");
                             ViewBag.ParentCategories = await _context.Categories
                                                     .Where(c => c.Id != id)
                                                     .OrderBy(c => c.Name)
@@ -433,9 +422,9 @@ namespace MiniE_TicaretPaneli.Controllers
                     }
                     else
                     {
-                        if (_context.Categories.Any(c => c.Name == category.Name && c.ParentCategoryId == null && c.Id != category.Id))
+                        if (_context.Categories.Any(c => c.Name == category.Name && c.ParentCategoryId == null && c.Gender == category.Gender && c.Id != category.Id))
                         {
-                            ModelState.AddModelError("Name", "Bu isimde bir ana kategori zaten mevcut.");
+                            ModelState.AddModelError("Name", "Bu isimde bu cinsiyete ait bir ana kategori zaten mevcut.");
                             ViewBag.ParentCategories = await _context.Categories
                                                     .Where(c => c.Id != id)
                                                     .OrderBy(c => c.Name)
@@ -465,40 +454,20 @@ namespace MiniE_TicaretPaneli.Controllers
         }
 
         // GET: /Admin/DeleteCategory/{id}
-        [HttpGet]
-        public async Task<IActionResult> DeleteCategory(int? id)
-        {
-            if (id == null) { return NotFound(); }
-            var category = await _context.Categories.Include(c => c.ParentCategory).FirstOrDefaultAsync(m => m.Id == id);
-            if (category == null) { return NotFound(); }
-
-            if (await _context.Products.AnyAsync(p => p.GenderCategoryId == id || p.MainCategoryId == id || p.SubCategoryId == id) ||
-                await _context.Categories.AnyAsync(c => c.ParentCategoryId == id))
-            {
-                TempData["ErrorMessage"] = "Bu kategoriye bağlı ürünler veya alt kategoriler bulunmaktadır. Silinemez!";
-                return RedirectToAction(nameof(Categories));
-            }
-            ViewData["Title"] = "Kategori Sil";
-            return View(category);
-        }
-
-        // POST: /Admin/DeleteCategory/{id}
-        [HttpPost, ActionName("DeleteCategory")]
+        [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteCategoryConfirmed(int id)
+        public async Task<IActionResult> DeleteCategory(int id)
         {
             var category = await _context.Categories.FindAsync(id);
-            if (category == null) { return NotFound(); }
-            if (await _context.Products.AnyAsync(p => p.GenderCategoryId == id || p.MainCategoryId == id || p.SubCategoryId == id) ||
+            if (category == null) { return NotFound("Kategori bulunamadı."); }
+            if (await _context.Products.AnyAsync(p => p.MainCategoryId == id || p.SubCategoryId == id) ||
                 await _context.Categories.AnyAsync(c => c.ParentCategoryId == id))
             {
-                TempData["ErrorMessage"] = "Bu kategoriye bağlı ürünler veya alt kategoriler bulunmaktadır. Silinemedi!";
-                return RedirectToAction(nameof(Categories));
+                return BadRequest("Bu kategoriye bağlı ürünler veya alt kategoriler bulunmaktadır. Silinemez!");
             }
             _context.Categories.Remove(category);
             await _context.SaveChangesAsync();
-            TempData["SuccessMessage"] = "Kategori başarıyla silindi!";
-            return RedirectToAction(nameof(Categories));
+            return Ok();
         }
 
         // Helper Method: CategoryExists
@@ -516,6 +485,42 @@ namespace MiniE_TicaretPaneli.Controllers
                                               .Select(c => new { id = c.Id, name = c.Name, gender = c.Gender })
                                               .ToListAsync();
             return Json(subcategories);
+        }
+
+        [HttpGet]
+        public async Task<JsonResult> GetMainCategories()
+        {
+            var mainCategories = await _context.Categories
+                .Include(c => c.ParentCategory)
+                .Where(c => c.ParentCategoryId != null)
+                .Select(c => new { id = c.Id, name = c.Name, parentName = c.ParentCategory != null ? c.ParentCategory.Name : "" })
+                .ToListAsync();
+            return Json(mainCategories);
+        }
+
+        [HttpGet]
+        public async Task<JsonResult> GetAllMainCategoriesWithParent()
+        {
+            var mainCategories = await _context.Categories
+                .Include(c => c.ParentCategory)
+                .Where(c => c.ParentCategoryId != null)
+                .Select(c => new {
+                    id = c.Id,
+                    name = c.Name,
+                    parentName = c.ParentCategory != null ? c.ParentCategory.Name : ""
+                })
+                .ToListAsync();
+            return Json(mainCategories);
+        }
+
+        [HttpGet]
+        public async Task<JsonResult> GetRootCategories()
+        {
+            var rootCategories = await _context.Categories
+                .Where(c => c.ParentCategoryId == null)
+                .Select(c => new { id = c.Id, name = c.Name })
+                .ToListAsync();
+            return Json(rootCategories);
         }
 
         // Varsayılan Bedenleri Getiren Yardımcı Metot

@@ -18,13 +18,7 @@ namespace MiniE_TicaretPaneli.Models.ViewModels
         [StringLength(50, ErrorMessage = "Cinsiyet en fazla 50 karakter olmalıdır.")]
         public string? Gender { get; set; }
 
-        [Required(ErrorMessage = "Kategori tipi zorunludur.")]
-        [StringLength(50, ErrorMessage = "Kategori tipi en fazla 50 karakter olmalıdır.")]
-        public string? Type { get; set; }
-
-        [Required(ErrorMessage = "Kategori değeri zorunludur.")]
-        [StringLength(100, ErrorMessage = "Kategori değeri en fazla 100 karakter olmalıdır.")]
-        public string? Value { get; set; }
+        // Kategori Tipi ve Kategori Değeri kaldırıldı
 
         [StringLength(200, ErrorMessage = "Slug en fazla 200 karakter olmalıdır.")]
         public string? Slug { get; set; }
@@ -34,5 +28,6 @@ namespace MiniE_TicaretPaneli.Models.ViewModels
 
         public List<SelectListItem> AvailableParentCategories { get; set; } = new List<SelectListItem>();
         public List<Category> AllCategoriesForJs { get; set; } = new List<Category>();
+        public List<Category> MainCategories { get; set; } = new List<Category>();
     }
 }

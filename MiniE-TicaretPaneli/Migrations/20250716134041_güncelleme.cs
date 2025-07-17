@@ -5,7 +5,7 @@
 namespace MiniE_TicaretPaneli.Migrations
 {
     /// <inheritdoc />
-    public partial class CreateAllTables : Migration
+    public partial class güncelleme : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

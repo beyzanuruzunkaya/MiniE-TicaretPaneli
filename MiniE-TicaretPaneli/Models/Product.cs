@@ -27,9 +27,9 @@ namespace MiniE_TicaretPaneli.Models
         public int Stock { get; set; }
 
         // Kategori ilişkileri (Yeni Hiyerarşi)
-        [Required(ErrorMessage = "Cinsiyet kategorisi seçimi zorunludur.")]
-        public int GenderCategoryId { get; set; }
-        public Category GenderCategory { get; set; } = null!;
+        // [Required(ErrorMessage = "Cinsiyet kategorisi seçimi zorunludur.")]
+        // public int GenderCategoryId { get; set; }
+        // public Category GenderCategory { get; set; } = null!;
 
         [Required(ErrorMessage = "Ana kategori seçimi zorunludur.")]
         public int MainCategoryId { get; set; }

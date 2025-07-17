@@ -21,32 +21,32 @@
 
                     <div class="mb-3">
                         <label asp-for="FirstName" class="form-label">Ad:</label>
-                        <input asp-for="FirstName" class="form-control" autocomplete="given-name" />
+                        <input asp-for="FirstName" class="form-control" autocomplete="given-name" id="FirstName" />
                         <span asp-validation-for="FirstName" class="text-danger"></span>
                     </div>
                     <div class="mb-3">
                         <label asp-for="LastName" class="form-label">Soyad:</label>
-                        <input asp-for="LastName" class="form-control" autocomplete="family-name" />
+                        <input asp-for="LastName" class="form-control" autocomplete="family-name" id="LastName" />
                         <span asp-validation-for="LastName" class="text-danger"></span>
                     </div>
                     <div class="mb-3">
                         <label asp-for="Username" class="form-label">Kullanıcı Adı:</label>
-                        <input asp-for="Username" class="form-control" autocomplete="username" />
+                        <input asp-for="Username" class="form-control" autocomplete="username" id="Username" />
                         <span asp-validation-for="Username" class="text-danger"></span>
                     </div>
                     <div class="mb-3">
                         <label asp-for="Email" class="form-label">E-posta Adresi:</label>
-                        <input asp-for="Email" class="form-control" autocomplete="email" />
+                        <input asp-for="Email" class="form-control" autocomplete="email" id="Email" />
                         <span asp-validation-for="Email" class="text-danger"></span>
                     </div>
                     <div class="mb-3">
                         <label asp-for="PhoneNumber" class="form-label">Telefon Numarası (İsteğe Bağlı):</label>
-                        <input asp-for="PhoneNumber" class="form-control" autocomplete="tel" />
+                        <input asp-for="PhoneNumber" class="form-control" autocomplete="tel" id="PhoneNumber" />
                         <span asp-validation-for="PhoneNumber" class="text-danger"></span>
                     </div>
                     <div class="mb-3">
                         <label asp-for="PasswordHash" class="form-label">Şifre:</label>
-                        <input asp-for="PasswordHash" class="form-control" type="password" autocomplete="new-password" />
+                        <input asp-for="PasswordHash" class="form-control" type="password" autocomplete="new-password" id="PasswordHash" />
                         <span asp-validation-for="PasswordHash" class="text-danger"></span>
                         <small class="form-text text-muted">Şifre en az 8 karakter, bir büyük harf, bir küçük harf, bir rakam ve bir özel karakter içermelidir.</small>
                     </div>

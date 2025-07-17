@@ -22,11 +22,6 @@ namespace MiniE_TicaretPaneli.Models
 
         public ICollection<Product> Products { get; set; } = new List<Product>();
 
-        [StringLength(50, ErrorMessage = "Tip en fazla 50 karakter olmalıdır.")]
-        public string? Type { get; set; }
-        [StringLength(100, ErrorMessage = "Değer en fazla 100 karakter olmalıdır.")]
-        public string? Value { get; set; }
-
         [StringLength(200, ErrorMessage = "Slug en fazla 200 karakter olmalıdır.")]
         public string? Slug { get; set; }
 

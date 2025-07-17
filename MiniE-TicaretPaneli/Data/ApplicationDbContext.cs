@@ -48,13 +48,6 @@ namespace MiniE_TicaretPaneli.Data
 
             // Product - Category İlişkileri (Yeni Hiyerarşi)
 
-            // Product - GenderCategory (Seviye 1 Cinsiyet/Yaş Grubu Kategorisi) ilişkisi
-            modelBuilder.Entity<Product>()
-                .HasOne(p => p.GenderCategory)
-                .WithMany()
-                .HasForeignKey(p => p.GenderCategoryId)
-                .OnDelete(DeleteBehavior.Restrict);
-
             // Product - MainCategory (Seviye 2 Ürün Grubu Kategorisi) ilişkisi
             modelBuilder.Entity<Product>()
                 .HasOne(p => p.MainCategory)

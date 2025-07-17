@@ -12,8 +12,8 @@ using MiniE_TicaretPaneli.Data;
 namespace MiniE_TicaretPaneli.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250710072440_CreateAllTables")]
-    partial class CreateAllTables
+    [Migration("20250717062310_guncelleme")]
+    partial class guncelleme
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -46,13 +46,8 @@ namespace MiniE_TicaretPaneli.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Slug")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Type")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Value")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.HasKey("Id");
 
@@ -71,22 +66,27 @@ namespace MiniE_TicaretPaneli.Migrations
 
                     b.Property<string>("CardHolderName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("CardNumberLastFour")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(4)
+                        .HasColumnType("nvarchar(4)");
 
                     b.Property<string>("CvvHash")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(4)
+                        .HasColumnType("nvarchar(4)");
 
                     b.Property<string>("ExpiryMonth")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(2)
+                        .HasColumnType("nvarchar(2)");
 
                     b.Property<string>("ExpiryYear")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(2)
+                        .HasColumnType("nvarchar(2)");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -111,7 +111,8 @@ namespace MiniE_TicaretPaneli.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<float>("TotalAmount")
                         .HasColumnType("real");
@@ -179,15 +180,20 @@ namespace MiniE_TicaretPaneli.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("Gender")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<int>("GenderCategoryId")
+                        .HasColumnType("int");
+
                     b.Property<string>("ImageUrl")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<int>("MainCategoryId")
                         .HasColumnType("int");
@@ -215,6 +221,8 @@ namespace MiniE_TicaretPaneli.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("GenderCategoryId");
 
                     b.HasIndex("MainCategoryId");
 
@@ -357,6 +365,12 @@ namespace MiniE_TicaretPaneli.Migrations
 
             modelBuilder.Entity("MiniE_TicaretPaneli.Models.Product", b =>
                 {
+                    b.HasOne("MiniE_TicaretPaneli.Models.Category", "GenderCategory")
+                        .WithMany()
+                        .HasForeignKey("GenderCategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("MiniE_TicaretPaneli.Models.Category", "MainCategory")
                         .WithMany("Products")
                         .HasForeignKey("MainCategoryId")
@@ -368,6 +382,8 @@ namespace MiniE_TicaretPaneli.Migrations
                         .HasForeignKey("SubCategoryId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("GenderCategory");
 
                     b.Navigation("MainCategory");
 

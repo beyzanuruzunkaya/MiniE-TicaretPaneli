@@ -7,14 +7,16 @@
 
 <h1 class="mb-4">Yeni Kategori Ekle</h1>
 
+<div class="alert alert-info">MainCategories: @string.Join(", ", Model.MainCategories.Select(x => x.Name))</div>
+
 <div class="card shadow-sm p-4">
     <form asp-action="AddCategory" method="post">
         @Html.AntiForgeryToken() @* CSRF koruması için zorunludur *@
         <div asp-validation-summary="All" class="text-danger mb-3"></div> 
 
         <div class="mb-3">
-            <label asp-for="Gender" class="form-label">Cinsiyet:</label>
-            <select asp-for="Gender" class="form-select" id="genderDropdown">
+            <label class="form-label" for="genderDropdown">Cinsiyet:</label>
+            <select asp-for="Gender" class="form-select" id="genderDropdown" autocomplete="sex">
                 <option value="">-- Cinsiyet Seçiniz --</option>
                 <option value="Kadın">Kadın</option>
                 <option value="Erkek">Erkek</option>
@@ -26,47 +28,35 @@
         <div class="mb-3">
             <label class="form-label">Eklemek İstediğiniz Kategori Seviyesi:</label><br />
             <div class="form-check form-check-inline">
-                <input class="form-check-input" type="radio" name="CategoryLevelType" id="radioMainGroup" value="MainGroup" asp-for="CategoryLevelType">
+                <input class="form-check-input" type="radio" name="CategoryLevelType" id="radioMainGroup" value="MainGroup"
+                    @(Model.CategoryLevelType == "MainGroup" || string.IsNullOrEmpty(Model.CategoryLevelType) ? "checked" : "") />
                 <label class="form-check-label" for="radioMainGroup">Ana Kategori Grubu (Örn: Giyim, Ayakkabı)</label>
             </div>
             <div class="form-check form-check-inline">
-                <input class="form-check-input" type="radio" name="CategoryLevelType" id="radioProductType" value="ProductType" asp-for="CategoryLevelType">
+                <input class="form-check-input" type="radio" name="CategoryLevelType" id="radioProductType" value="ProductType"
+                    @(Model.CategoryLevelType == "ProductType" ? "checked" : "") />
                 <label class="form-check-label" for="radioProductType">Alt Kategori / Ürün Tipi (Örn: Tişört, Elbise)</label>
             </div>
             <span asp-validation-for="CategoryLevelType" class="text-danger d-block"></span>
         </div>
 
-        <div class="mb-3" id="parentCategorySection"> @* <<< Bu bölüm dinamik olarak gizlenecek/gösterilecek *@
-            <label asp-for="ParentCategoryId" class="form-label">Üst Kategori Seçiniz:</label>
+        <div class="mb-3" id="parentCategorySection" style="display:none;"> @* <<< Bu bölüm dinamik olarak gizlenecek/gösterilecek *@
+            <label class="form-label" for="parentCategoryDropdown">Üst Kategori Seçiniz:</label>
             <select asp-for="ParentCategoryId" class="form-select" id="parentCategoryDropdown">
                 <option value="">-- Üst Kategori Seçiniz --</option>
-                @* Bu dropdown JavaScript ile dinamik olarak doldurulacak *@
+                @* Sadece ana kategoriler gösterilecek (isteğe bağlı olarak serverdan doldurulabilir) *@
+                @foreach (var cat in Model.MainCategories)
+                {
+                    <option value="@cat.Id">@cat.Name</option>
+                }
             </select>
             <span asp-validation-for="ParentCategoryId" class="text-danger"></span>
         </div>
 
         <div class="mb-3">
             <label asp-for="Name" class="form-label">Yeni Kategori Adı:</label>
-            <input asp-for="Name" class="form-control" />
+            <input asp-for="Name" class="form-control" id="Name" autocomplete="off" />
             <span asp-validation-for="Name" class="text-danger"></span>
-        </div>
-
-        <div class="mb-3">
-            <label asp-for="Type" class="form-label">Kategori Tipi:</label>
-            <input asp-for="Type" class="form-control" readonly /> @* Otomatik doldurulacak *@
-            <span asp-validation-for="Type" class="text-danger"></span>
-        </div>
-
-        <div class="mb-3">
-            <label asp-for="Value" class="form-label">Kategori Değeri:</label>
-            <input asp-for="Value" class="form-control" readonly /> @* Otomatik doldurulacak *@
-            <span asp-validation-for="Value" class="text-danger"></span>
-        </div>
-
-        <div class="mb-3">
-            <label asp-for="Slug" class="form-label">Slug (Opsiyonel):</label>
-            <input asp-for="Slug" class="form-control" />
-            <span asp-validation-for="Slug" class="text-danger"></span>
         </div>
 
         <hr />
@@ -78,96 +68,59 @@
 </div>
 
 @section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var $dropdown = document.getElementById('parentCategoryDropdown');
+            if (!$dropdown) return;
+
+            fetch('/Admin/GetRootCategories')
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Gelen ana kategoriler:", data);
+                    $dropdown.innerHTML = '';
+                    var defaultOption = document.createElement('option');
+                    defaultOption.value = '';
+                    defaultOption.text = '-- Üst Kategori Seçiniz --';
+                    $dropdown.appendChild(defaultOption);
+                    data.forEach(function (cat) {
+                        var option = document.createElement('option');
+                        option.value = cat.id;
+                        option.text = cat.name;
+                        $dropdown.appendChild(option);
+                    });
+                    console.log("Dropdown'a eklenen option sayısı:", $dropdown.options.length);
+                })
+                .catch(error => console.error("AJAX hata:", error));
+        });
+    </script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="~/js/site.js"></script>
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     <script>
         $(document).ready(function () {
-            var allCategories = @Html.Raw(Json.Serialize(Model.AllCategoriesForJs));
-            var parentCategoryDropdown = $('#parentCategoryDropdown');
-            var genderDropdown = $('#genderDropdown');
+            console.log("jQuery çalışıyor!");
             var categoryLevelRadios = $('input[name="CategoryLevelType"]');
-            var categoryNameInput = $('#Name');
+            var parentCategorySection = $('#parentCategorySection');
 
-            // Type ve Value alanlarını otomatik dolduracak fonksiyon
-            function updateTypeAndValueFields() {
+            function toggleParentCategorySection() {
                 var selectedLevel = $('input[name="CategoryLevelType"]:checked').val();
-                var categoryName = categoryNameInput.val();
-
-                if (selectedLevel === "MainGroup") {
-                    $('#Type').val("Ürün Grubu");
-                    $('#Value').val(categoryName || "");
-                } else if (selectedLevel === "ProductType") {
-                    $('#Type').val("Ürün Tipi");
-                    $('#Value').val(categoryName || "");
+                console.log("toggleParentCategorySection çağrıldı, seçili:", selectedLevel);
+                if (selectedLevel === "ProductType") {
+                    parentCategorySection.css('display', 'block');
                 } else {
-                    $('#Type').val("");
-                    $('#Value').val("");
+                    parentCategorySection.css('display', 'none');
+                    $('#parentCategoryDropdown').val('');
                 }
             }
 
-            // Üst kategori dropdown'ını ve Kategori Tipi/Değeri alanlarını güncelleyen ana fonksiyon
-            function updateFormFields() {
-                var selectedGender = genderDropdown.val();
-                var selectedLevel = $('input[name="CategoryLevelType"]:checked').val();
-                parentCategoryDropdown.empty().append($('<option></option>').val('').text('-- Üst Kategori Seçiniz --'));
+            // Olayı hem change hem click ile bağla
+            categoryLevelRadios.on('change click', function() {
+                console.log("Radio değişti:", $(this).val());
+                toggleParentCategorySection();
+            });
 
-                updateTypeAndValueFields(); // Type ve Value alanlarını güncelle
-
-                // ParentCategorySection'ın görünürlüğünü ayarla
-                if (selectedLevel === "MainGroup") {
-                    $('#parentCategorySection').hide(); // Ana Kategori Grubu seçildiyse gizle
-                    parentCategoryDropdown.val(''); // Gizlendiğinde değeri temizle
-                } else if (selectedLevel === "ProductType") {
-                    $('#parentCategorySection').show(); // Alt Kategori / Ürün Tipi seçildiyse göster
-                } else {
-                    $('#parentCategorySection').hide(); // Hiçbir seviye seçilmediyse gizle
-                    parentCategoryDropdown.val(''); // Gizlendiğinde değeri temizle
-                }
-
-                if (selectedGender && selectedLevel === "ProductType") { // Sadece Alt Kategori / Ürün Tipi seçiliyse üst kategorileri doldur
-                    var filteredParents = [];
-                    // Cinsiyete göre seviye 1 kategorinin ID'sini bul
-                    var genderCategory = allCategories.find(c => c.parentCategoryId === null && c.gender === selectedGender);
-                    if (genderCategory) {
-                         // Şimdi o seviye 1 kategorinin altındaki tüm seviye 2 kategorileri getir
-                         filteredParents = allCategories.filter(c => c.parentCategoryId === genderCategory.id && (c.type === "Ürün Grubu" || c.type === "Yaş Grubu Kategori"));
-                    }
-
-                    $.each(filteredParents, function (index, category) {
-                        var text = category.name;
-                        if (category.parentCategory && category.parentCategory.name) { // Üst kategorisi varsa parantez içinde göster
-                            text += " (" + category.parentCategory.name + ")";
-                        }
-                        parentCategoryDropdown.append($('<option></option>').val(category.id).text(text));
-                    });
-                }
-            }
-            
-            // Olay dinleyicileri
-            genderDropdown.change(updateFormFields); // Cinsiyet değiştiğinde tüm formu güncelle
-            categoryLevelRadios.change(updateFormFields); // Kategori seviyesi değiştiğinde tüm formu güncelle
-            categoryNameInput.on('input', updateTypeAndValueFields); // Kategori adı değiştiğinde Type/Value güncelle
-
-
-            // Sayfa yüklendiğinde başlangıç durumunu ayarla (Hata dönüşü veya düzenleme modu için)
-            // EditCategory veya POST sonrası hata dönüşünde değerleri korumak için
-            var initialGender = '@(Model.Gender)';
-            var initialCategoryLevel = '@(Model.CategoryLevelType)';
-            var initialParentCategoryId = '@(Model.ParentCategoryId)';
-
-            if (initialGender) {
-                genderDropdown.val(initialGender);
-            }
-            
-            if (initialCategoryLevel) {
-                $('input[name="CategoryLevelType"][value="' + initialCategoryLevel + '"]').prop('checked', true);
-                updateFormFields(); // Formu başlangıç değerlerine göre doldur
-                if (initialParentCategoryId && initialParentCategoryId !== "0") {
-                    parentCategoryDropdown.val(initialParentCategoryId);
-                }
-            } else {
-                // Hiçbir kategori seviyesi seçili değilse başlangıçta üst kategori bölümünü gizle
-                $('#parentCategorySection').hide();
-            }
+            // Sayfa yüklendiğinde de kontrol et
+            setTimeout(toggleParentCategorySection, 0);
         });
     </script>
 }
