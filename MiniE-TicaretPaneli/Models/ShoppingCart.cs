@@ -13,5 +13,6 @@ namespace MiniE_TicaretPaneli.Models
         public Product Product { get; set; } = null!;
 
         public int Quantity { get; set; }
+        public string? SelectedSize { get; set; }
     }
 }

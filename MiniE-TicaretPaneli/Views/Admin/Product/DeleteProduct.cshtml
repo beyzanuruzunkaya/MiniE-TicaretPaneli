@@ -1,0 +1,65 @@
+﻿@* Views/Admin/DeleteProduct.cshtml *@
+@model MiniE_TicaretPaneli.Models.Product
+
+@{
+    ViewData["Title"] = "Ürün Sil";
+}
+
+<h1 class="mb-4 text-danger">Ürünü Sil</h1>
+
+<h3>Bu ürünü silmek istediğinizden emin misiniz?</h3>
+<div class="card shadow-sm p-4">
+    <dl class="row">
+        <dt class="col-sm-3">
+            Görsel
+        </dt>
+        <dd class="col-sm-9">
+            <img src="@Model.ImageUrl" alt="@Model.Name" style="width: 150px; height: 150px; object-fit: cover; border-radius: 5px;" />
+        </dd>
+        <dt class="col-sm-3">
+            @Html.DisplayNameFor(model => model.Name)
+        </dt>
+        <dd class="col-sm-9">
+            @Html.DisplayFor(model => model.Name)
+        </dd>
+        <dt class="col-sm-3">
+            @Html.DisplayNameFor(model => model.Price)
+        </dt>
+        <dd class="col-sm-9">
+            @Model.Price.ToString("C2")
+        </dd>
+        <dt class="col-sm-3">
+            @Html.DisplayNameFor(model => model.Stock)
+        </dt>
+        <dd class="col-sm-9">
+            @Html.DisplayFor(model => model.Stock)
+        </dd>
+        <dt class="col-sm-3">
+            Ana Kategori
+        </dt>
+        <dd class="col-sm-9">
+            @Html.DisplayFor(model => model.MainCategory!.Name)
+        </dd>
+        <dt class="col-sm-3">
+            Alt Kategori
+        </dt>
+        <dd class="col-sm-9">
+            @Html.DisplayFor(model => model.SubCategory!.Name)
+        </dd>
+        <dt class="col-sm-3">
+            @Html.DisplayNameFor(model => model.Gender)
+        </dt>
+        <dd class="col-sm-9">
+            @Html.DisplayFor(model => model.Gender)
+        </dd>
+    </dl>
+
+    <form asp-action="DeleteProduct" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <div class="d-flex justify-content-between mt-3">
+            <a asp-controller="Product" asp-action="Products" class="btn btn-secondary">Listeye Geri Dön</a>
+            <button type="submit" class="btn btn-danger"><i class="fas fa-trash-alt me-2"></i>Sil</button>
+        </div>
+    </form>
+</div>

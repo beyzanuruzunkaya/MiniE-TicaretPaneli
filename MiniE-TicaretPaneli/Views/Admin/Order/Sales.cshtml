@@ -1,0 +1,97 @@
+﻿@* Views/Admin/Sales.cshtml *@
+@model IEnumerable<MiniE_TicaretPaneli.Models.Order> 
+
+@{
+    ViewData["Title"] = "Satış Görüntüleme";
+}
+
+<h1 class="mb-4">Satış Görüntüleme</h1>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info text-center">Henüz bir satış yapılmamış.</div>
+} 
+else 
+{ 
+    <div class="accordion" id="ordersAccordion">
+        @foreach (var order in Model) 
+        { 
+            <div class="accordion-item shadow-sm mb-3">
+                <h2 class="accordion-header" id="heading_@order.Id">
+                    <button class="accordion-button collapsed bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#collapse_@order.Id" aria-expanded="false" aria-controls="collapse_@order.Id">
+                        <div class="d-flex w-100 justify-content-between">
+                            <strong>Sipariş No: @order.Id</strong>
+                            <span>Müşteri: @order.User.Username</span>
+                            <span>Tarih: @order.OrderDate.ToShortDateString()</span>
+                            <span class="badge bg-primary fs-6">Toplam: @order.TotalAmount.ToString("C2")</span>
+                            <span class="badge bg-secondary">Durum: 
+                                @if (order.Status == "Cancelled")
+                                {
+                                    <text><i class="fas fa-times text-danger me-1"></i> İptal Edildi</text>
+                                }
+                                else
+                                {
+                                    @order.Status
+                                }
+                            </span>
+                        </div>
+                    </button>
+                </h2>
+                <div id="collapse_@order.Id" class="accordion-collapse collapse" aria-labelledby="heading_@order.Id" data-bs-parent="#ordersAccordion">
+                    <div class="accordion-body">
+                        @if (order.Status == "Cancelled")
+                        {
+                            <div class="alert alert-danger mb-3">Bu sipariş iptal edilmiştir.</div>
+                        }
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Ürün Adı</th>
+                                        <th>Adet</th>
+                                        <th>Birim Fiyat</th>
+                                        <th>Toplam</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in order.OrderItems) 
+                                    { 
+                                        <tr>
+                                            <td>@item.Product.Name</td>
+                                            <td>@item.Quantity</td>
+                                            <td>@item.UnitPrice.ToString("C2")</td>
+                                            <td>@((item.Quantity * item.UnitPrice).ToString("C2"))</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        @{
+                            var statusList = new List<SelectListItem> {
+                                new SelectListItem { Text = "Siparişiniz alındı", Value = "Siparişiniz alındı" },
+                                new SelectListItem { Text = "Siparişiniz hazırlanıyor", Value = "Siparişiniz hazırlanıyor" },
+                                new SelectListItem { Text = "Kargoya verildi", Value = "Kargoya verildi" },
+                                new SelectListItem { Text = "Teslim edildi", Value = "Teslim edildi" },
+                                new SelectListItem { Text = "İptal Edildi", Value = "Cancelled" }
+                            };
+                        }
+                        @if (order.Status != "Cancelled")
+                        {
+                            <form asp-action="UpdateOrderStatus" asp-controller="Order" method="post" class="d-flex align-items-center gap-2 mt-3">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@order.Id" />
+                                @Html.DropDownList("newStatus", statusList, order.Status, new { @class = "form-select form-select-sm", style = "width: 220px;" })
+                                <button type="submit" class="btn btn-primary btn-sm">Kaydet</button>
+                            </form>
+                            <form asp-action="AdminCancelOrder" asp-controller="Order" method="post" class="d-inline ms-2">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@order.Id" />
+                                <button type="submit" class="btn btn-danger btn-sm">İptal Et</button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            </div>
+        } 
+    </div>
+} 

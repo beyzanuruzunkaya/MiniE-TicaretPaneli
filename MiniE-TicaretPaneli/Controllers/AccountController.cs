@@ -11,7 +11,8 @@ using System.Threading.Tasks; // Asenkron metotlar için
 using System; // DateTimeOffset, TimeSpan için
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
-using MiniE_TicaretPaneli.Models.ViewModels; // List için
+using MiniE_TicaretPaneli.Models.ViewModels; // List için (bu using'i kaldırmadım, ResetPasswordViewModel için gerekli olabilir)
+using BCrypt.Net; // BCrypt için eklendi // <-- BU SATIRI EKLEYİN!
 
 namespace MiniE_TicaretPaneli.Controllers
 {
@@ -35,15 +36,18 @@ namespace MiniE_TicaretPaneli.Controllers
         [HttpPost]
         public async Task<IActionResult> Login(string username, string password)
         {
-            var user = _context.Users.FirstOrDefault(u => u.Username == username && u.PasswordHash == password); // GÜVENSİZ ŞİFRE KARŞILAŞTIRMASI
+            // Kullanıcıyı veritabanında bul
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username); // await eklendi
 
-            if (user != null)
+            // GÜVENLİK DÜZELTMESİ: Şifreyi HASH ile karşılaştır!
+            // user null değilse VE girilen şifre (password) ile veritabanındaki hash (user.PasswordHash) eşleşiyorsa
+            if (user != null && BCrypt.Net.BCrypt.Verify(password, user.PasswordHash)) 
             {
                 var claims = new List<Claim>
                 {
                     new Claim(ClaimTypes.Name, user.Username),
                     new Claim(ClaimTypes.Role, user.Role.ToString()), // Enum'ı string'e çevir
-                    new Claim("UserId", user.Id.ToString())
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()) 
                 };
 
                 var claimsIdentity = new ClaimsIdentity(
@@ -51,7 +55,7 @@ namespace MiniE_TicaretPaneli.Controllers
 
                 var authProperties = new AuthenticationProperties
                 {
-                    IsPersistent = false,
+                    IsPersistent = false, // Oturum çerezi tarayıcı kapanınca silinir
                     ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(30)
                 };
 
@@ -60,14 +64,7 @@ namespace MiniE_TicaretPaneli.Controllers
                     new ClaimsPrincipal(claimsIdentity),
                     authProperties);
 
-                if (user.Role == UserRole.Admin)
-                {
-                    return RedirectToAction("AdminDashboard", "Admin");
-                }
-                else if (user.Role == UserRole.Customer)
-                {
-                    return RedirectToAction("Index", "Home"); // Müşteri rolündeyse Anasayfaya yönlendir
-                }
+                return RedirectToAction("Index", "Home");
             }
 
             ViewBag.ErrorMessage = "Geçersiz kullanıcı adı veya şifre.";
@@ -87,53 +84,42 @@ namespace MiniE_TicaretPaneli.Controllers
         public async Task<IActionResult> Register(
             [Bind("Username,PasswordHash,FirstName,LastName,Email,PhoneNumber")] User user)
         {
-            // Debugging için user nesnesini burada inceleyebilirsiniz
-
-            // Ek güvenlik kontrolü: Eğer PasswordHash veya diğer [Required] alanlar boş gelirse
             if (string.IsNullOrEmpty(user.PasswordHash))
             {
                 ModelState.AddModelError("PasswordHash", "Şifre alanı boş bırakılamaz.");
             }
-            // FirstName, LastName, Email zorunlu olduğu için ModelState.IsValid tarafından yakalanır
-            // Ancak yine de explicit kontrol eklemek isterseniz benzer şekilde ekleyebilirsiniz.
-
-            // Şifre Karmaşıklığı Kontrolü (Sunucu tarafı)
             if (!string.IsNullOrEmpty(user.PasswordHash) && !IsPasswordComplex(user.PasswordHash))
             {
                 ModelState.AddModelError("PasswordHash", "Şifre en az 8 karakter, bir büyük harf, bir küçük harf, bir rakam ve bir özel karakter içermelidir.");
             }
 
-            // Ana Model doğrulama ve ek kontroller
-            if (ModelState.IsValid) // Tüm Data Annotation kuralları ve yukarıdaki manuel kontroller geçerliyse
+            if (ModelState.IsValid)
             {
-                // Kullanıcı adı, e-posta veya telefon numarası zaten kullanılıyor mu?
-                if (_context.Users.Any(u => u.Username == user.Username))
+                if (await _context.Users.AnyAsync(u => u.Username == user.Username)) // await eklendi
                 {
                     ModelState.AddModelError("Username", "Bu kullanıcı adı zaten alınmış.");
                 }
-                if (_context.Users.Any(u => u.Email == user.Email))
+                if (await _context.Users.AnyAsync(u => u.Email == user.Email)) // await eklendi
                 {
                     ModelState.AddModelError("Email", "Bu e-posta adresi zaten kullanılıyor.");
                 }
-                // Telefon numarası boş değilse ve kullanılıyorsa kontrol et
-                if (!string.IsNullOrEmpty(user.PhoneNumber) && _context.Users.Any(u => u.PhoneNumber == user.PhoneNumber))
+                if (!string.IsNullOrEmpty(user.PhoneNumber) && await _context.Users.AnyAsync(u => u.PhoneNumber == user.PhoneNumber)) // 
                 {
                     ModelState.AddModelError("PhoneNumber", "Bu telefon numarası zaten kullanılıyor.");
                 }
 
-                // Eğer yukarıdaki kontrollerden sonra hala ModelState geçerliyse kaydet
                 if (ModelState.IsValid)
                 {
+                    user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(user.PasswordHash); // <-- BURAYI DÜZELTİN!
                     user.Role = UserRole.Customer; // Varsayılan olarak müşteri rolü ver
                     _context.Users.Add(user);
                     await _context.SaveChangesAsync();
 
-                    // Kayıt başarılı olduktan sonra kullanıcıyı otomatik olarak giriş yaptır
                     var claims = new List<Claim>
                     {
                         new Claim(ClaimTypes.Name, user.Username),
                         new Claim(ClaimTypes.Role, user.Role.ToString()),
-                        new Claim("UserId", user.Id.ToString())
+                        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()) // <-- BURAYI DÜZELTİN
                     };
 
                     var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -142,12 +128,11 @@ namespace MiniE_TicaretPaneli.Controllers
                     await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity), authProperties);
 
                     TempData["SuccessMessage"] = "Kaydınız başarıyla tamamlandı!";
-                    return RedirectToAction("Index", "Home"); // Anasayfaya yönlendir
+                    return RedirectToAction("Index", "Home");
                 }
             }
 
-            // Model geçerli değilse veya doğrulama hataları varsa formu tekrar göster
-            return View(user); // 'user' nesnesini View'a geri gönderiyoruz
+            return View(user);
         }
 
         [HttpGet]
@@ -168,27 +153,18 @@ namespace MiniE_TicaretPaneli.Controllers
                 return View();
             }
 
-            // Kullanıcıyı e-posta veya kullanıcı adına göre bul
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == emailOrUsername || u.Username == emailOrUsername);
 
             if (user == null)
             {
-                // Güvenlik amacıyla, kullanıcı bulunsa bile aynı mesajı gösterin
                 TempData["Message"] = "Şifre sıfırlama linki e-posta adresinize gönderilmiştir.";
                 return RedirectToAction("ForgotPasswordConfirmation");
             }
 
-            // Şifre sıfırlama token'ı oluşturma simülasyonu
-            // Gerçek bir senaryoda bu token güvenli ve zaman sınırlı olurdu.
-            // Bu token'ı veritabanında da saklamanız gerekebilir.
-            var resetToken = Guid.NewGuid().ToString("N").Substring(0, 16); // Basit bir token
-
-            // Gerçekte: Bu token ve kullanıcının ID'si ile bir e-posta gönderilir.
-            // Örneğin: "http://localhost:port/Account/ResetPassword?token=resetToken&userId=user.Id"
-            // ŞİMDİLİK: Token'ı TempData ile bir sonraki sayfaya aktaracağız.
+            var resetToken = Guid.NewGuid().ToString("N").Substring(0, 16);
             TempData["ResetToken"] = resetToken;
             TempData["UserIdForReset"] = user.Id;
-            TempData["UserEmailForReset"] = user.Email; // Onay sayfasında göstermek için
+            TempData["UserEmailForReset"] = user.Email;
 
             TempData["Message"] = "Şifre sıfırlama linki e-posta adresinize gönderilmiştir.";
             return RedirectToAction("ForgotPasswordConfirmation");
@@ -203,19 +179,15 @@ namespace MiniE_TicaretPaneli.Controllers
         }
 
         // GET: /Account/ResetPassword
-        // Token ve UserId ile çağrılır
         [HttpGet]
         public async Task<IActionResult> ResetPassword(string token, int userId)
         {
-            // Gerçek uygulamada: Token'ın geçerliliği (varlığı, süresi) burada kontrol edilir.
-            // Bu bir simülasyon olduğu için sadece token'ın varlığını kontrol ediyoruz.
             if (string.IsNullOrEmpty(token) || userId == 0)
             {
                 TempData["ErrorMessage"] = "Geçersiz şifre sıfırlama linki.";
                 return RedirectToAction("Login");
             }
 
-            // Kullanıcıyı bul
             var user = await _context.Users.FindAsync(userId);
             if (user == null)
             {
@@ -223,39 +195,33 @@ namespace MiniE_TicaretPaneli.Controllers
                 return RedirectToAction("Login");
             }
 
-            // View'a modeli göndererek token ve userId'yi hidden olarak tut
             ViewData["Title"] = "Şifre Sıfırla";
             var model = new ResetPasswordViewModel { Token = token, UserId = userId };
             return View(model);
         }
 
         // POST: /Account/ResetPassword
-        // Yeni şifreyi ayarla
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
         {
-            // Model doğrulaması (şifreler uyuşuyor mu, karmaşıklık vb.)
             if (ModelState.IsValid)
             {
-                // Gerçek uygulamada: Token'ın geçerliliği (varlığı, süresi) tekrar kontrol edilir ve kullanılırsa geçersiz kılınır.
-                // Bu bir simülasyon olduğu için basit bir kontrol yapıyoruz.
                 var user = await _context.Users.FindAsync(model.UserId);
-                if (user == null || TempData["ResetToken"] as string != model.Token) // Basit token kontrolü
+                if (user == null || TempData["ResetToken"] as string != model.Token)
                 {
                     ModelState.AddModelError("", "Geçersiz veya süresi dolmuş şifre sıfırlama linki.");
                     return View(model);
                 }
 
-                // Şifre karmaşıklığı kontrolü (PasswordHash alanı User modelindeki karmaşıklık kurallarıyla uyumlu olmalı)
                 if (!IsPasswordComplex(model.NewPassword))
                 {
                     ModelState.AddModelError("NewPassword", "Şifre en az 8 karakter, bir büyük harf, bir küçük harf, bir rakam ve bir özel karakter içermelidir.");
                     return View(model);
                 }
 
-                // Şifreyi güncelle (Hashleme!)
-                user.PasswordHash = model.NewPassword; // !!! GÜVENSİZ! GERÇEKTE HASHLEMELİSİNİZ
+                // GÜVENLİK DÜZELTMESİ: Şifreyi HASHLE!
+                user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.NewPassword); // <-- BURAYI DÜZELTİN!
 
                 _context.Update(user);
                 await _context.SaveChangesAsync();
@@ -264,20 +230,56 @@ namespace MiniE_TicaretPaneli.Controllers
                 return RedirectToAction("Login");
             }
 
-            // Doğrulama hatası varsa formu tekrar göster
             return View(model);
         }
 
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> Profile()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+                return RedirectToAction("Login");
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) return RedirectToAction("Login");
+            return View(user);
+        }
 
-        // Şifre Karmaşıklığı Kontrolü Metodu
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Profile(User updatedUser, string? newPassword)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+                return RedirectToAction("Login");
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) return RedirectToAction("Login");
+
+            if (!string.IsNullOrEmpty(newPassword))
+            {
+                if (!IsPasswordComplex(newPassword))
+                {
+                    ModelState.AddModelError("PasswordHash", "Şifre en az 8 karakter, bir büyük harf, bir küçük harf, bir rakam ve bir özel karakter içermelidir.");
+                    return View(user);
+                }
+                user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            }
+            user.FirstName = updatedUser.FirstName;
+            user.LastName = updatedUser.LastName;
+            user.Email = updatedUser.Email;
+            user.PhoneNumber = updatedUser.PhoneNumber;
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Profiliniz güncellendi.";
+            return View(user);
+        }
+
         private bool IsPasswordComplex(string password)
         {
-            // En az 8 karakter, bir büyük harf, bir küçük harf, bir rakam ve bir özel karakter
-            if (password.Length < 8) return false;
+            if (string.IsNullOrEmpty(password) || password.Length < 8) return false;
             if (!password.Any(char.IsUpper)) return false;
             if (!password.Any(char.IsLower)) return false;
             if (!password.Any(char.IsDigit)) return false;
-            // Harf veya rakam olmayan herhangi bir karakter (boşluklar dahil edilmez)
             if (!password.Any(ch => !char.IsLetterOrDigit(ch) && !char.IsWhiteSpace(ch))) return false;
             return true;
         }
@@ -285,8 +287,8 @@ namespace MiniE_TicaretPaneli.Controllers
         // GET: /Account/Logout
         public async Task<IActionResult> Logout()
         {
-            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme); // Oturumu sonlandır
-            return RedirectToAction("Login", "Account"); // Giriş sayfasına geri yönlendir
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return RedirectToAction("Login", "Account");
         }
 
         // GET: /Account/AccessDenied

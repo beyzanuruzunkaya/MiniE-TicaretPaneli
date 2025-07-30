@@ -26,8 +26,12 @@ namespace MiniE_TicaretPaneli.Models.ViewModels
         [Required(ErrorMessage = "Lütfen ekleyeceğiniz kategori seviyesini seçiniz.")]
         public string CategoryLevelType { get; set; } = string.Empty; // "MainGroup" veya "ProductType"
 
+        public int Id { get; set; }
+
         public List<SelectListItem> AvailableParentCategories { get; set; } = new List<SelectListItem>();
         public List<Category> AllCategoriesForJs { get; set; } = new List<Category>();
         public List<Category> MainCategories { get; set; } = new List<Category>();
+
+        // public Category Category { get; set; } = new Category(); // <-- Bunu kaldırdım
     }
 }

@@ -1,0 +1,62 @@
+@model MiniE_TicaretPaneli.Models.ViewModels.AddCategoryViewModel
+@{
+    ViewData["Title"] = "Kategori Düzenle";
+}
+
+<h1 class="mb-4">Kategori Düzenle</h1>
+
+<div class="card shadow-sm p-4">
+    <form asp-action="EditCategory" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+        <div class="mb-3">
+            <label asp-for="Name" class="form-label">Kategori Adı</label>
+            <input asp-for="Name" class="form-control" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Gender" class="form-label">Cinsiyet</label>
+            <select asp-for="Gender" class="form-select">
+                <option value="">-- Cinsiyet Seçiniz --</option>
+                <option value="Kadın">Kadın</option>
+                <option value="Erkek">Erkek</option>
+                <option value="Çocuk">Çocuk</option>
+            </select>
+            <span asp-validation-for="Gender" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="ParentCategoryId" class="form-label">Üst Kategori</label>
+            <select asp-for="ParentCategoryId" class="form-select">
+                <option value="">-- Üst Kategori Seçiniz --</option>
+                @foreach (var cat in ViewBag.ParentCategories as List<SelectListItem>)
+                {
+                    if (cat.Value == (Model.ParentCategoryId?.ToString() ?? ""))
+                    {
+                        <option value="@cat.Value" selected="selected">@cat.Text</option>
+                    }
+                    else
+                    {
+                        <option value="@cat.Value">@cat.Text</option>
+                    }
+                }
+            </select>
+            <span asp-validation-for="ParentCategoryId" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Slug" class="form-label">Slug</label>
+            <input asp-for="Slug" class="form-control" />
+            <span asp-validation-for="Slug" class="text-danger"></span>
+        </div>
+        <hr />
+        <div class="d-flex justify-content-between">
+            <a asp-action="Categories" class="btn btn-secondary">Listeye Geri Dön</a>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Kaydet</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+} 

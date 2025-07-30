@@ -1,0 +1,338 @@
+﻿@* Views/Customer/Checkout.cshtml *@
+@{
+    ViewData["Title"] = "Ödeme Sayfası";
+    var cartItems = ViewBag.CartItems as List<MiniE_TicaretPaneli.Models.ShoppingCart>;
+    var totalAmount = ViewBag.TotalAmount;
+    var creditCards = ViewBag.CreditCards as List<MiniE_TicaretPaneli.Models.CreditCard>;
+    var addresses = ViewBag.Addresses as List<MiniE_TicaretPaneli.Models.Address>;
+}
+
+<h1 class="mb-4">Ödeme Sayfası</h1>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="row">
+    <div class="col-md-8">
+        <form asp-action="ProcessPayment" asp-controller="CustomerOrder" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="All" class="text-danger mb-3"></div>
+            <div class="card shadow-sm p-4 mb-4">
+                <h4 class="mb-3">Sipariş Özeti</h4>
+                <ul class="list-group mb-3">
+                    @if (cartItems != null)
+                    {
+                        @foreach (var item in cartItems)
+                        {
+                            <li class="list-group-item d-flex justify-content-between lh-sm">
+                                <div>
+                                    <h6 class="my-0">@item.Product.Name</h6>
+                                    <small class="text-muted">@item.Quantity x @item.Product.Price.ToString("C2")</small>
+                                </div>
+                                <span class="text-muted">@((item.Product.Price * item.Quantity).ToString("C2"))</span>
+                            </li>
+                        }
+                    }
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Toplam (₺)</span>
+                        <strong>@totalAmount?.ToString("C2")</strong>
+                    </li>
+                </ul>
+            </div>
+            <div class="card shadow-sm p-4 mb-4">
+                <h4 class="mb-3">Teslimat Adresi</h4>
+                @if (addresses != null && addresses.Any())
+                {
+                    <div class="row g-3 mb-3" id="addressCards">
+                        @foreach (var addr in addresses)
+                        {
+                            <div class="col-md-6">
+                                <label class="w-100 address-card card p-3 mb-2">
+                                    <input class="form-check-input me-2" type="radio" name="addressOption" value="@addr.Id" autocomplete="off">
+                                    <span>
+                                        <strong>@addr.Title</strong><br />
+                                        @addr.AddressLine, @addr.District/@addr.City
+                                        @if (!string.IsNullOrEmpty(addr.PostalCode)) { <span>(@addr.PostalCode)</span> }<br />
+                                        <small>@addr.Phone</small>
+                                    </span>
+                                </label>
+                            </div>
+                        }
+                        <div class="col-md-6">
+                            <label class="w-100 address-card card p-3 mb-2">
+                                <input class="form-check-input me-2" type="radio" name="addressOption" value="new" id="addressOptionNew" autocomplete="off">
+                                <span><strong>Farklı bir adres kullan</strong></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div id="newAddressForm" style="display:none">
+                        <h5>Yeni Adres Bilgileri</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="newAddressTitle" class="form-label">Adres Başlığı</label>
+                                <input type="text" class="form-control" id="newAddressTitle" name="newAddressTitle" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="newAddressPhone" class="form-label">Telefon</label>
+                                <input type="text" class="form-control" id="newAddressPhone" name="newAddressPhone" />
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="newAddressCity" class="form-label">Şehir</label>
+                                <select class="form-select" id="newAddressCity" name="newAddressCity"></select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="newAddressDistrict" class="form-label">İlçe</label>
+                                <select class="form-select" id="newAddressDistrict" name="newAddressDistrict"></select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newAddressLine" class="form-label">Adres</label>
+                            <textarea class="form-control" id="newAddressLine" name="newAddressLine"></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="newAddressPostalCode" class="form-label">Posta Kodu</label>
+                                <input type="text" class="form-control" id="newAddressPostalCode" name="newAddressPostalCode" />
+                            </div>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="saveNewAddress" name="saveNewAddress" value="true" checked />
+                            <label class="form-check-label" for="saveNewAddress">Bu adresi hesabıma kaydet</label>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div id="newAddressForm" style="display:block">
+                        <h5>Yeni Adres Bilgileri</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="newAddressTitle" class="form-label">Adres Başlığı</label>
+                                <input type="text" class="form-control" id="newAddressTitle" name="newAddressTitle" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="newAddressPhone" class="form-label">Telefon</label>
+                                <input type="text" class="form-control" id="newAddressPhone" name="newAddressPhone" />
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="newAddressCity" class="form-label">Şehir</label>
+                                <select class="form-select" id="newAddressCity" name="newAddressCity"></select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="newAddressDistrict" class="form-label">İlçe</label>
+                                <select class="form-select" id="newAddressDistrict" name="newAddressDistrict"></select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newAddressLine" class="form-label">Adres</label>
+                            <textarea class="form-control" id="newAddressLine" name="newAddressLine"></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="newAddressPostalCode" class="form-label">Posta Kodu</label>
+                                <input type="text" class="form-control" id="newAddressPostalCode" name="newAddressPostalCode" />
+                            </div>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="saveNewAddress" name="saveNewAddress" value="true" checked />
+                            <label class="form-check-label" for="saveNewAddress">Bu adresi hesabıma kaydet</label>
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="card shadow-sm p-4 mb-4">
+                <h4 class="mb-3">Ödeme Bilgileri</h4>
+                @if (creditCards != null && creditCards.Any())
+                {
+                    <div class="list-group mb-3">
+                        @foreach (var card in creditCards)
+                        {
+                            <label class="list-group-item d-flex gap-2">
+                                <input class="form-check-input flex-shrink-0" type="radio" name="selectedCardId" id="card_@card.Id" value="@card.Id" required>
+                                <span>
+                                    @card.CardHolderName - **** **** **** @card.CardNumberLastFour
+                                    <small class="d-block text-muted">@card.ExpiryMonth/@card.ExpiryYear</small>
+                                </span>
+                            </label>
+                        }
+                        <label class="list-group-item d-flex gap-2">
+                            <input class="form-check-input flex-shrink-0" type="radio" name="selectedCardId" id="card_new" value="" required>
+                            <span><strong>Başka bir kart ile öde</strong></span>
+                        </label>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-warning">Kayıtlı kartınız bulunmamaktadır. Lütfen yeni kart bilgisi giriniz.</div>
+                }
+                <hr class="my-4">
+                <div id="newCardForm" style="display:@((creditCards == null || !creditCards.Any()) ? "block" : "none")">
+                    <h5>Yeni Kart Bilgileri Gir</h5>
+                    <div class="row gy-3">
+                        <div class="col-md-6">
+                            <label for="newCardHolderName" class="form-label">Kart Sahibi Adı Soyadı</label>
+                            <input type="text" class="form-control" id="newCardHolderName" name="newCardHolderName" placeholder="Ad Soyad" autocomplete="cc-name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="newCardNumber" class="form-label">Kart Numarası (Son 4 hane)</label>
+                            <input type="text" class="form-control" id="newCardNumber" name="newCardNumber" placeholder="1234" maxlength="4" minlength="4" pattern="[0-9]{4}" autocomplete="cc-number" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="newExpiryMonth" class="form-label">Son Kullanma Ayı</label>
+                            <input type="text" class="form-control" id="newExpiryMonth" name="newExpiryMonth" placeholder="AA" maxlength="2" minlength="2" pattern="0[1-9]|1[0-2]" autocomplete="cc-exp-month" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="newExpiryYear" class="form-label">Son Kullanma Yılı</label>
+                            <input type="text" class="form-control" id="newExpiryYear" name="newExpiryYear" placeholder="YY" maxlength="2" minlength="2" pattern="[0-9]{2}" autocomplete="cc-exp-year" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="newCvv" class="form-label">CVV</label>
+                            <input type="password" class="form-control" id="newCvv" name="newCvv" placeholder="***" maxlength="3" autocomplete="cc-csc" required>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="true" id="saveCard" name="saveCard">
+                                <label class="form-check-label" for="saveCard">
+                                    Bu kartı daha sonra kullanmak üzere kaydet
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr class="my-4">
+                <button class="w-100 btn btn-primary btn-lg" type="submit" id="btnPaymentSubmit">
+                    <i class="fas fa-credit-card me-2"></i>Ödemeyi Tamamla
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script src="~/js/cityDistricts.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        $(document).ready(function () {
+            // Adres seçimi radio butonları
+            $('input[name="addressOption"]').change(function () {
+                if ($(this).val() === 'new') {
+                    $('#newAddressForm').show();
+                } else {
+                    $('#newAddressForm').hide();
+                }
+            });
+            // Sayfa yüklenince seçili adresi vurgula
+            var $selected = $('input[name="addressOption"]:checked');
+            if ($selected.length) {
+                $selected.closest('.address-card').addClass('border-primary shadow-lg');
+            }
+            // Şehir/ilçe dropdownları (yeni adres için)
+            var $city = $('#newAddressCity');
+            var $district = $('#newAddressDistrict');
+            $city.append($('<option>', { value: '', text: '-- Şehir Seçin --' }));
+            $.each(cityDistricts, function (city, districts) {
+                $city.append($('<option>', { value: city, text: city }));
+            });
+            $city.change(function () {
+                var selectedCity = $(this).val();
+                $district.empty();
+                $district.append($('<option>', { value: '', text: '-- İlçe Seçin --' }));
+                if (selectedCity && cityDistricts[selectedCity]) {
+                    $.each(cityDistricts[selectedCity], function (i, district) {
+                        $district.append($('<option>', { value: district, text: district }));
+                    });
+                }
+            });
+
+            function toggleNewCardForm() {
+                var isNew = $('input[name="selectedCardId"]:checked').val() === "";
+                $('#newCardForm').toggle(isNew);
+                // Yeni kart inputlarının required'ını dinamik ayarla
+                $('#newCardForm input').each(function () {
+                    if (isNew) {
+                        $(this).attr('required', 'required');
+                    } else {
+                        $(this).removeAttr('required');
+                    }
+                });
+            }
+            $('input[name="selectedCardId"]').change(toggleNewCardForm);
+            toggleNewCardForm();
+
+            // SweetAlert ile ödeme doğrulama
+            $('#btnPaymentSubmit').off('click').on('click', function (e) {
+                var selectedAddress = $('input[name="addressOption"]:checked').val();
+                if (!selectedAddress) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Adres Seçmelisiniz',
+                        text: 'Lütfen bir teslimat adresi seçin veya yeni adres girin.'
+                    });
+                    return false;
+                }
+                if (selectedAddress === 'new') {
+                    // Yeni adres alanları boş mu kontrol et
+                    var valid = true;
+                    var requiredFields = ['#newAddressTitle', '#newAddressCity', '#newAddressDistrict', '#newAddressLine'];
+                    requiredFields.forEach(function (id) {
+                        if (!$(id).val()) valid = false;
+                    });
+                    if (!valid) {
+                        e.preventDefault();
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Adres Bilgileri Eksik',
+                            text: 'Adres, şehir ve ilçe alanları boş bırakılamaz.'
+                        });
+                        return false;
+                    }
+                }
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Doğrulama Kodu',
+                    text: 'Telefonunuza bir doğrulama kodu gönderildi. Lütfen kodu girin:',
+                    input: 'text',
+                    inputLabel: '6 haneli kod',
+                    inputPlaceholder: '123456',
+                    showCancelButton: true,
+                    confirmButtonText: 'Onayla',
+                    cancelButtonText: 'Vazgeç',
+                    inputAttributes: {
+                        maxlength: 6,
+                        autocapitalize: 'off',
+                        autocorrect: 'off'
+                    },
+                    preConfirm: (code) => {
+                        if (code !== '123456') {
+                            Swal.showValidationMessage('Kod yanlış! Lütfen tekrar deneyin.');
+                        }
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed && result.value === '123456') {
+                        $(this).closest('form').off('submit').submit();
+                    }
+                });
+            });
+        });
+    </script>
+}

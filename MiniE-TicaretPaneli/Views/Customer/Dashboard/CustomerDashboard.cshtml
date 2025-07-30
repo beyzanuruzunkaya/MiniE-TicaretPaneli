@@ -1,0 +1,82 @@
+﻿@{
+    ViewData["Title"] = "Hesabım";
+    var userName = User.Identity?.Name ?? "Kullanıcı";
+}
+
+<div class="container py-4">
+    <div class="row mb-4 align-items-center">
+        <div class="col-auto">
+            <img src="https://ui-avatars.com/api/?name=@userName&background=0D8ABC&color=fff&size=80" class="rounded-circle shadow" alt="Profil" width="80" height="80" />
+        </div>
+        <div class="col">
+            <h2 class="fw-bold mb-1">Hoş geldiniz, <span class="text-primary">@userName</span>!</h2>
+            <div class="text-muted">Hesap panelinizden tüm işlemlerinizi kolayca yönetebilirsiniz.</div>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4 mb-5">
+        <div class="col">
+            <div class="card h-100 text-center shadow-sm border-primary dashboard-card-hover">
+                <div class="card-body">
+                    <i class="fas fa-shopping-bag display-4 text-primary mb-3"></i>
+                    <h5 class="card-title">Siparişlerim</h5>
+                    <p class="card-text">Geçmiş siparişlerinizi görüntüleyin.</p>
+                    <a asp-controller="CustomerOrder" asp-action="Orders" class="btn btn-primary mt-3 w-100">Git <i class="fas fa-arrow-right ms-2"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card h-100 text-center shadow-sm border-success dashboard-card-hover">
+                <div class="card-body">
+                    <i class="fas fa-credit-card display-4 text-success mb-3"></i>
+                    <h5 class="card-title">Kredi Kartlarım</h5>
+                    <p class="card-text">Kayıtlı kredi kartlarınızı yönetin.</p>
+                    <a asp-controller="CreditCard" asp-action="CreditCards" class="btn btn-success mt-3 w-100">Git <i class="fas fa-arrow-right ms-2"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card h-100 text-center shadow-sm border-warning dashboard-card-hover">
+                <div class="card-body">
+                    <i class="fas fa-map-marker-alt display-4 text-warning mb-3"></i>
+                    <h5 class="card-title">Adreslerim</h5>
+                    <p class="card-text">Teslimat adreslerinizi yönetin.</p>
+                    <a asp-controller="Address" asp-action="AddressList" class="btn btn-warning mt-3 w-100 text-white">Git <i class="fas fa-arrow-right ms-2"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card h-100 text-center shadow-sm border-info dashboard-card-hover">
+                <div class="card-body">
+                    <i class="fas fa-user-cog display-4 text-info mb-3"></i>
+                    <h5 class="card-title">Hesap Bilgilerim</h5>
+                    <p class="card-text">Profil ve iletişim bilgilerinizi güncelleyin.</p>
+                    <a asp-controller="Account" asp-action="Profile" class="btn btn-info mt-3 w-100 text-white">Git <i class="fas fa-arrow-right ms-2"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.dashboard-card-hover {
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+.dashboard-card-hover:hover {
+    transform: translateY(-6px) scale(1.03);
+    box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.12);
+    z-index: 2;
+}
+</style>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

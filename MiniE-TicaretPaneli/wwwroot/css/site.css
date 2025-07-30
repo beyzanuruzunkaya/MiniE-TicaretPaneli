@@ -5,26 +5,26 @@ body {
     color: #333; /* Genel metin rengi */
 }
 
-/* Footer'ýn sayfanýn altýnda kalmasýný saðlamak için */
+/* Footer'ï¿½n sayfanï¿½n altï¿½nda kalmasï¿½nï¿½ saï¿½lamak iï¿½in */
 html {
     position: relative;
     min-height: 100%;
 }
 
 body {
-    margin-bottom: 80px; /* Footer yüksekliði kadar boþluk */
+    margin-bottom: 80px; /* Footer yï¿½ksekliï¿½i kadar boï¿½luk */
 }
 
 .footer {
     position: absolute;
     bottom: 0;
     width: 100%;
-    height: 60px; /* Footer'ýn yüksekliði */
-    line-height: 60px; /* Dikeyde ortalamak için */
+    height: 60px; /* Footer'ï¿½n yï¿½ksekliï¿½i */
+    line-height: 60px; /* Dikeyde ortalamak iï¿½in */
     background-color: #343a40; /* Koyu tema */
 }
 
-/* Navbar üzerinde metin rengini beyaz yapmak için */
+/* Navbar ï¿½zerinde metin rengini beyaz yapmak iï¿½in */
 .navbar-brand, .navbar-nav .nav-link, .navbar-text {
     color: rgba(255, 255, 255, 0.9); /* Beyaz metin */
 }
@@ -42,10 +42,10 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    position: relative; /* Ýçerideki metnin üstte olmasý için */
-    z-index: 1; /* Ýçeriðin banner üzerinde görünmesini saðlar */
-    padding: 100px 0; /* Ýç boþluk */
-    margin-top: -60px; /* Navbar'ýn altýnda baþlamasý için eksi margin */
+    position: relative; /* ï¿½ï¿½erideki metnin ï¿½stte olmasï¿½ iï¿½in */
+    z-index: 1; /* ï¿½ï¿½eriï¿½in banner ï¿½zerinde gï¿½rï¿½nmesini saï¿½lar */
+    padding: 100px 0; /* ï¿½ï¿½ boï¿½luk */
+    margin-top: -60px; /* Navbar'ï¿½n altï¿½nda baï¿½lamasï¿½ iï¿½in eksi margin */
 }
 
     .hero-section::before {
@@ -55,16 +55,16 @@ body {
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(0, 0, 0, 0.4); /* Resim üzerine hafif koyu overlay */
-        z-index: -1; /* Resmin arkasýnda kalýr */
+        background: rgba(0, 0, 0, 0.4); /* Resim ï¿½zerine hafif koyu overlay */
+        z-index: -1; /* Resmin arkasï¿½nda kalï¿½r */
     }
 
     .hero-section h1, .hero-section p {
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); /* Metinlere hafif gölge */
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); /* Metinlere hafif gï¿½lge */
     }
 
 .custom-btn-glow {
-    box-shadow: 0 0 10px rgba(255, 193, 7, 0.6); /* Sarý butona parlama efekti */
+    box-shadow: 0 0 10px rgba(255, 193, 7, 0.6); /* Sarï¿½ butona parlama efekti */
     transition: box-shadow 0.3s ease-in-out;
 }
 
@@ -74,8 +74,8 @@ body {
 
 /* Kart Stilleri */
 .category-card img, .product-card img {
-    height: 200px; /* Görsel yüksekliðini sabitle */
-    object-fit: cover; /* Görselin kartý kaplamasýný saðla */
+    height: 200px; /* Gï¿½rsel yï¿½ksekliï¿½ini sabitle */
+    object-fit: cover; /* Gï¿½rselin kartï¿½ kaplamasï¿½nï¿½ saï¿½la */
     border-top-left-radius: calc(.25rem - 1px);
     border-top-right-radius: calc(.25rem - 1px);
 }
@@ -88,7 +88,7 @@ body {
 }
 
     .category-card:hover {
-        transform: translateY(-5px); /* Hover'da hafif yukarý kaydýr */
+        transform: translateY(-5px); /* Hover'da hafif yukarï¿½ kaydï¿½r */
         box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
     }
 
@@ -114,3 +114,155 @@ body {
         transform: translateY(-5px);
         box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
     }
+
+.address-card.selected, .list-group-item.selected {
+    border: 2px solid #007bff;
+    box-shadow: 0 0 8px #007bff33;
+    background: #f0f8ff;
+}
+
+/* Modern CSS Stilleri - Ana Sayfa */
+.hero-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+    animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { 
+        transform: translateY(0px); 
+    }
+    50% { 
+        transform: translateY(-20px); 
+    }
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+}
+
+.custom-btn-glow {
+    background: linear-gradient(45deg, #ff6b6b, #feca57);
+    border: none;
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+}
+
+.custom-btn-glow:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255, 107, 107, 0.6);
+    color: white;
+}
+
+.category-card {
+    transition: all 0.3s ease;
+    border: none;
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.category-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+}
+
+.category-card img {
+    height: 200px;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.category-card:hover img {
+    transform: scale(1.1);
+}
+
+.product-card {
+    transition: all 0.3s ease;
+    border: none;
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+}
+
+.product-card img {
+    height: 250px;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.product-card:hover img {
+    transform: scale(1.05);
+}
+
+.service-card {
+    transition: all 0.3s ease;
+    border-radius: 15px;
+    border: none;
+}
+
+.service-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+}
+
+.service-card i {
+    transition: transform 0.3s ease;
+}
+
+.service-card:hover i {
+    transform: scale(1.2);
+}
+
+.section-title {
+    position: relative;
+    display: inline-block;
+}
+
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    border-radius: 2px;
+}
+
+.fade-in {
+    opacity: 0;
+    transform: translateY(30px);
+    animation: fadeInUp 0.8s ease forwards;
+}
+
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.stagger-animation {
+    animation-delay: calc(var(--animation-order) * 0.1s);
+}

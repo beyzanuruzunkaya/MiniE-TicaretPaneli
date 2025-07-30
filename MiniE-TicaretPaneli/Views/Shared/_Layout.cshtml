@@ -23,7 +23,7 @@
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link text-white" asp-area="" asp-controller="Customer" asp-action="Products">Ürünler</a>
+                            <a class="nav-link text-white" href="/Customer/Product/Products">Ürünler</a>
                         </li>
                         @* Admin rolündeki kullanıcılara özel menü *@
                         @if (User.Identity!.IsAuthenticated && User.IsInRole("Admin"))
@@ -34,10 +34,10 @@
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="navbarDropdownAdmin">
 
-                                    <li><a class="dropdown-item" asp-controller="Admin" asp-action="Products">Ürün Yönetimi</a></li>
-                                    <li><a class="dropdown-item" asp-controller="Admin" asp-action="Users">Müşteri Görüntüleme</a></li>
-                                    <li><a class="dropdown-item" asp-controller="Admin" asp-action="Sales">Satış Görüntüleme</a></li>
-                                    <li><a class="dropdown-item" asp-controller="Admin" asp-action="Categories">Kategori Yönetimi</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Product" asp-action="Products">Ürün Yönetimi</a></li>
+                                    <li><a class="dropdown-item" asp-controller="User" asp-action="Users">Müşteri Görüntüleme</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Order" asp-action="Sales">Satış Görüntüleme</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Category" asp-action="Categories">Kategori Yönetimi</a></li>
 
                                 </ul>
                             </li>
@@ -48,18 +48,19 @@
                         @if (User.Identity!.IsAuthenticated)
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-white" asp-controller="Customer" asp-action="Cart"><i class="fas fa-shopping-cart"></i> Sepet</a>
+                                <a class="nav-link text-white" asp-controller="Cart" asp-action="Cart"><i class="fas fa-shopping-cart"></i> Sepet</a>
                             </li>
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle text-white" href="#" id="navbarDropdownUser" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="fas fa-user"></i> Merhaba, @User.Identity.Name!
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="navbarDropdownUser">
-                                    <li><a class="dropdown-item" asp-controller="Customer" asp-action="CustomerDashboard">Hesabım</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Dashboard" asp-action="CustomerDashboard">Hesabım</a></li>
                                     @if (User.IsInRole("Customer"))
                                     {
-                                        <li><a class="dropdown-item" asp-controller="Customer" asp-action="Orders">Siparişlerim</a></li>
-                                        <li><a class="dropdown-item" asp-controller="Customer" asp-action="CreditCards">Kartlarım</a></li>
+                                        <li><a class="dropdown-item" asp-controller="CustomerOrder" asp-action="Orders">Siparişlerim</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Address" asp-action="AddressList">Adreslerim</a></li>
+                                        <li><a class="dropdown-item" asp-controller="CreditCard" asp-action="CreditCards">Kartlarım</a></li>
                                     }
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item" asp-controller="Account" asp-action="Logout"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</a></li>

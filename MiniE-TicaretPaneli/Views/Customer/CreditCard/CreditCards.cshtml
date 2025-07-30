@@ -1,0 +1,86 @@
+﻿@* Views/Customer/CreditCards.cshtml *@
+@model IEnumerable<MiniE_TicaretPaneli.Models.CreditCard>
+
+@{
+    ViewData["Title"] = "Kredi Kartlarım";
+}
+
+<h1 class="mb-4">Kredi Kartlarım</h1>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<p>
+    <a asp-action="AddCreditCard" class="btn btn-primary"><i class="fas fa-plus-circle me-2"></i>Yeni Kart Ekle</a>
+</p>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info text-center">Henüz kayıtlı bir kredi kartınız bulunmamaktadır.</div>
+}
+else
+{
+    <div class="row row-cols-1 row-cols-md-2 g-4">
+        @foreach (var card in Model)
+        {
+            <div class="col">
+                <div class="card shadow-sm h-100 bg-light">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-credit-card me-2"></i> @card.CardHolderName</h5>
+                        <p class="card-text text-muted">**** **** **** @card.CardNumberLastFour</p>
+                        <p class="card-text">Son Kullanma Tarihi: @card.ExpiryMonth/@card.ExpiryYear</p>
+                        <div class="d-flex gap-2 mt-3">
+                            <form asp-action="DeleteCreditCard" asp-controller="CreditCard" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@card.Id" />
+                                <button type="submit" class="btn btn-sm btn-danger btn-delete-card">Sil</button>
+                            </form>
+                            <a asp-action="EditCreditCard" asp-controller="CreditCard" asp-route-id="@card.Id" class="btn btn-sm btn-warning">Güncelle</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        $(document).ready(function () {
+            $('.btn-delete-card').click(function (e) {
+                e.preventDefault();
+                var form = $(this).closest('form');
+                Swal.fire({
+                    title: 'Emin misiniz?',
+                    text: 'Bu kartı silmek istediğinize emin misiniz?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Evet, sil',
+                    cancelButtonText: 'Vazgeç'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            });
+        });
+    </script>
+}

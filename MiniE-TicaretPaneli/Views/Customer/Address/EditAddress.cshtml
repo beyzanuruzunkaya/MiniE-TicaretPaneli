@@ -1,0 +1,84 @@
+@model MiniE_TicaretPaneli.Models.Address
+@{
+    ViewData["Title"] = "Adres Düzenle";
+}
+
+<h1 class="mb-4">Adres Düzenle</h1>
+<div class="card shadow-sm p-4">
+    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+    <form asp-action="EditAddress" asp-controller="Address" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="UserId" />
+        <div class="mb-3">
+            <label asp-for="Title" class="form-label">Adres Başlığı</label>
+            <input asp-for="Title" class="form-control" />
+            <span asp-validation-for="Title" class="text-danger"></span>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="City" class="form-label">Şehir</label>
+                <select asp-for="City" class="form-select">
+                    <option value="">-- Şehir Seçin --</option>
+                    <option value="İstanbul">İstanbul</option>
+                    <option value="Ankara">Ankara</option>
+                    <option value="İzmir">İzmir</option>
+                    <option value="Isparta">Isparta</option>
+                    <!-- Diğer şehirler eklenebilir -->
+                </select>
+                <span asp-validation-for="City" class="text-danger"></span>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label asp-for="District" class="form-label">İlçe</label>
+                <select asp-for="District" class="form-select">
+                    <option value="">-- İlçe Seçin --</option>
+                    @if (Model.City == "İstanbul") {
+                        <option value="Kadıköy">Kadıköy</option>
+                        <option value="Beşiktaş">Beşiktaş</option>
+                        <option value="Üsküdar">Üsküdar</option>
+                        <option value="Bakırköy">Bakırköy</option>
+                    } else if (Model.City == "Ankara") {
+                        <option value="Çankaya">Çankaya</option>
+                        <option value="Keçiören">Keçiören</option>
+                        <option value="Yenimahalle">Yenimahalle</option>
+                    } else if (Model.City == "İzmir") {
+                        <option value="Konak">Konak</option>
+                        <option value="Bornova">Bornova</option>
+                        <option value="Karşıyaka">Karşıyaka</option>
+                    } else if (Model.City == "Isparta") {
+                        <option value="Merkez">Merkez</option>
+                        <option value="Eğirdir">Eğirdir</option>
+                        <option value="Yalvaç">Yalvaç</option>
+                    }
+                    <!-- Diğer ilçeler eklenebilir -->
+                </select>
+                <span asp-validation-for="District" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label asp-for="AddressLine" class="form-label">Adres</label>
+            <textarea asp-for="AddressLine" class="form-control"></textarea>
+            <span asp-validation-for="AddressLine" class="text-danger"></span>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="PostalCode" class="form-label">Posta Kodu</label>
+                <input asp-for="PostalCode" class="form-control" />
+                <span asp-validation-for="PostalCode" class="text-danger"></span>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label asp-for="Phone" class="form-label">Telefon</label>
+                <input asp-for="Phone" class="form-control" />
+                <span asp-validation-for="Phone" class="text-danger"></span>
+            </div>
+        </div>
+        <hr />
+        <div class="d-flex justify-content-between">
+            <a asp-action="AddressList" class="btn btn-secondary">Adreslerime Geri Dön</a>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Kaydet</button>
+        </div>
+    </form>
+</div>
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <!-- Şehir/ilçe için JS kaldırıldı -->
+} 

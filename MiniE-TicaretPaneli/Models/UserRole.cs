@@ -1,4 +1,5 @@
-﻿namespace MiniE_TicaretPaneli.Models
+﻿// Models/UserRole.cs
+namespace MiniE_TicaretPaneli.Models
 {
     public enum UserRole
     {

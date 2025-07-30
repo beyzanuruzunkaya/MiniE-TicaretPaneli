@@ -1,96 +1,124 @@
 // Program.cs
 using Microsoft.EntityFrameworkCore;
-using MiniE_TicaretPaneli.Data; // DbContext'inizin namespace'i
-using MiniE_TicaretPaneli.Models; // Modelleriniz (User, Product vb.) i�in
-using Microsoft.AspNetCore.Authentication.Cookies; // �erez tabanl� kimlik do�rulama i�in
-using System; // TimeSpan gibi tipler i�in
-using Microsoft.Extensions.DependencyInjection; // IServiceScopeFactory i�in
-using Microsoft.Extensions.Logging; // ILogger i�in
-using Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation; // Razor Runtime Compilation i�in
-using Microsoft.AspNetCore.CookiePolicy; // CookiePolicyOptions iin
-using Microsoft.AspNetCore.Antiforgery; // Antiforgery iin
+using MiniE_TicaretPaneli.Data;
+using MiniE_TicaretPaneli.Models;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using System;
+using Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation; // Razor Runtime Compilation için
+using Microsoft.AspNetCore.CookiePolicy; // CookiePolicyOptions için
+using Microsoft.AspNetCore.Antiforgery; // Antiforgery için
+using Microsoft.Extensions.Logging; // ILogger için
+using Microsoft.AspNetCore.Hosting; // IWebHostEnvironment için (otomatik enjekte edilir)
+using System.Collections.Generic;
+using System.Linq;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddControllersWithViews().AddRazorRuntimeCompilation();
+// ************************************************************
+// 1. SERVICES CONFIGURATION (Servislerin Yapılandırılması)
+// ************************************************************
 
+// MVC Controller'ları ve View'ları ekle
+builder.Services.AddMemoryCache();
+
+builder.Services.AddControllersWithViews()
+    .AddRazorOptions(options =>
+    {
+        // View konum formatlarını ekle (modüler yapınız için önemli)
+        options.ViewLocationFormats.Add("/Views/Admin/{1}/{0}.cshtml");
+        options.ViewLocationFormats.Add("/Views/Admin/Product/{0}.cshtml");
+        options.ViewLocationFormats.Add("/Views/Customer/{1}/{0}.cshtml");
+        options.ViewLocationFormats.Add("/Views/Customer/Product/{0}.cshtml"); // Müşteri Product Controller View'ları için eklendi
+    })
+    .AddRazorRuntimeCompilation(); // Geliştirme sırasında Razor dosyalarının anında derlenmesi için
+
+// Veritabanı bağlamını (ApplicationDbContext) servislere ekle
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Çerezlerin sadece HTTPS üzerinden gönderilmesini zorunlu kıl
+// Çerez politikası ayarları (GDPR uyumluluğu ve güvenlik için)
 builder.Services.Configure<CookiePolicyOptions>(options =>
 {
-    options.Secure = Microsoft.AspNetCore.Http.CookieSecurePolicy.Always;
+    options.Secure = CookieSecurePolicy.Always; // Çerezlerin sadece HTTPS üzerinden gönderilmesini zorunlu kıl
+    options.MinimumSameSitePolicy = SameSiteMode.Strict; // Daha katı SameSite politikası
+    options.HttpOnly = HttpOnlyPolicy.Always; // JavaScript erişimini engelle
 });
 
-// Cookie Authentication'da SecurePolicy ekle
+// Cookie Authentication servislerini ekle
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
-        options.LoginPath = "/Account/Login";
-        options.LogoutPath = "/Account/Logout";
-        options.AccessDeniedPath = "/Account/AccessDenied";
-        options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
-        options.SlidingExpiration = true;
-        options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.Always;
+        options.LoginPath = "/Account/Login";         // Giriş yapılmadığında yönlendirilecek sayfa
+        options.LogoutPath = "/Account/Logout";       // Çıkış yapıldığında yönlendirilecek sayfa
+        options.AccessDeniedPath = "/Account/AccessDenied"; // Yetkisi olmadığında yönlendirilecek sayfa
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(30); // Oturum süresi
+        options.SlidingExpiration = true;             // Oturum süresini otomatik uzat
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Çerezin güvenli (HTTPS) olmasını zorunlu kıl
+        options.Cookie.IsEssential = true;            // Çerezin uygulamanın çalışması için gerekli olduğunu belirtir
     });
 
-// Antiforgery çerezleri için Secure ayarı
+// Antiforgery token'ı için çerez güvenliği ayarı
 builder.Services.AddAntiforgery(options =>
 {
-    options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.Always;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
 });
 
-builder.Services.AddAuthorization();
+// Yetkilendirme servislerini ekle
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminPolicy", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("CustomerPolicy", policy => policy.RequireRole("Customer")); // Müşteri rolü için politika
+});
 
 var app = builder.Build();
 
-// Seed example categories
-using (var scope = app.Services.CreateScope())
-{
-    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    
-}
+// ************************************************************
+// 2. HTTP REQUEST PIPELINE CONFIGURATION (HTTP İstek İşlem Hattının Yapılandırılması)
+// ************************************************************
 
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
+// Geliştirme ortamı kontrolü ve hata sayfaları
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage(); // Bu satırın aktif olduğundan emin olun
+    // app.UseBrowserLink();
+}
+else
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
-if (app.Environment.IsDevelopment())
-{
-    app.UseDeveloperExceptionPage(); // Geli�tirme ortam� i�in detayl� hata sayfas�
-}
 
+// HTTPS'e yönlendirme
 app.UseHttpsRedirection();
+
+// Statik dosyaları (wwwroot klasöründeki CSS, JS, resimler vb.) sunar
 app.UseStaticFiles();
-app.UseCookiePolicy(); // CookiePolicyOptions middleware'i
+
+// Çerez politikası middleware'i (UseAuthentication'dan önce olmalı)
+app.UseCookiePolicy();
+
+// Routing middleware'ini etkinleştirir
 app.UseRouting();
 
-app.UseAuthentication(); // Kimlik dorulama middleware'i (UseRouting'den sonra, UseAuthorization'dan �nce)
-app.UseAuthorization();  // Yetkilendirme middleware'i (UseAuthentication'dan sonra)
+// Kimlik Doğrulama middleware'ini etkinleştirir (UseRouting'den sonra, UseAuthorization'dan önce)
+app.UseAuthentication();
 
-// Seed Data'y� uygula (Veritaban� bo�sa kullan�c�lar�, kategorileri ve �r�nleri ekler)
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    try
-    {
-        var context = services.GetRequiredService<ApplicationDbContext>();
-        
-       
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Uygulama ba�lang�c�nda veri doldurma (SeedData) s�ras�nda hata olu�tu.");
-    }
-}
+// Yetkilendirme middleware'ini etkinleştirir (UseAuthentication'dan sonra)
+app.UseAuthorization();
 
+// Seed Data'yı uygula (Veritabanı boşsa kullanıcıları, kategorileri ve ürünleri ekler)
+// Bu blok tamamen kaldırıldı.
+
+// Varsayılan route'u tanımla
+// Uygulama ilk açıldığında Home/Index'e yönlendirilecek.
+// Eğer Admin/Products'a gitmesini isterseniz: pattern: "{controller=Admin}/{action=Products}/{id?}" olarak değiştirin.
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Home}/{action=Index}/{id?}"
+); // Artık Customer/Product/Products varsayılan başlangıç
 
+// Attribute routing ile tanımlanan controller/action endpoint'leri için eklendi
+app.MapControllers();
+
+// Uygulamayı çalıştır
 app.Run();
