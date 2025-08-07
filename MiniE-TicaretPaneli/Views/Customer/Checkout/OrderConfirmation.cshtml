@@ -1,0 +1,193 @@
+@model MiniE_TicaretPaneli.Models.Order
+@{
+    ViewData["Title"] = "Sipariş Onayı";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white text-center">
+                    <h3 class="mb-0">
+                        <i class="fas fa-check-circle me-2"></i>Siparişiniz Başarıyla Oluşturuldu!
+                    </h3>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        <i class="fas fa-shopping-bag text-success" style="font-size: 4rem;"></i>
+                    </div>
+                    
+                    <h4 class="text-success mb-3">Sipariş Numarası: #@Model.Id</h4>
+                    <p class="text-muted">Sipariş tarihi: @Model.OrderDate.ToString("dd.MM.yyyy HH:mm")</p>
+                    
+                    <div class="alert alert-info">
+                        <strong>Siparişiniz alındı!</strong> Siparişiniz işleme alınmıştır. 
+                        Kargo bilgileri e-posta adresinize gönderilecektir.
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Sipariş Detayları</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Sipariş Durumu:</strong>
+                            <span class="badge bg-warning">@Model.Status</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Ödeme Yöntemi:</strong>
+                            <span>Kredi Kartı</span>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Sipariş Tarihi:</strong><br>
+                            <span>@Model.OrderDate.ToString("dd.MM.yyyy HH:mm")</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Toplam Tutar:</strong><br>
+                            <span class="fs-4 text-success">₺@Model.TotalAmount.ToString("N2")</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Sipariş Edilen Ürünler</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.OrderItems != null && Model.OrderItems.Any())
+                    {
+                        @foreach (var item in Model.OrderItems)
+                        {
+                            <div class="row mb-3 align-items-center">
+                                <div class="col-md-2">
+                                    @if (!string.IsNullOrEmpty(item.Product?.ImageUrl))
+                                    {
+                                        <a href="/Customer/Product/ProductDetail/@item.ProductId" 
+                                           class="text-decoration-none"
+                                           title="Ürün detayını görüntüle">
+                                            <img src="@item.Product.ImageUrl" 
+                                                 class="img-fluid rounded product-image-link" 
+                                                 alt="@item.Product.Name"
+                                                 style="transition: transform 0.2s;">
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <a href="/Customer/Product/ProductDetail/@item.ProductId" 
+                                           class="text-decoration-none"
+                                           title="Ürün detayını görüntüle">
+                                            <div class="bg-light d-flex align-items-center justify-content-center rounded product-image-link" 
+                                                 style="height: 80px; transition: transform 0.2s;">
+                                                <span class="text-muted small">Resim Yok</span>
+                                            </div>
+                                        </a>
+                                    }
+                                </div>
+                                <div class="col-md-6">
+                                    <a href="/Customer/Product/ProductDetail/@item.ProductId" 
+                                       class="text-decoration-none text-dark product-link"
+                                       title="Ürün detayını görüntüle">
+                                        <h6 class="mb-1">
+                                            @item.Product?.Name
+                                            <i class="fas fa-external-link-alt ms-1 text-muted" style="font-size: 0.8rem;"></i>
+                                        </h6>
+                                    </a>
+                                    <p class="text-muted mb-1">Beden: @item.SelectedSize</p>
+                                    <p class="text-muted mb-0">Birim Fiyat: ₺@item.Price.ToString("N2")</p>
+                                </div>
+                                <div class="col-md-2 text-center">
+                                    <span class="badge bg-secondary">@item.Quantity adet</span>
+                                </div>
+                                <div class="col-md-2 text-end">
+                                    <strong>₺@((item.Quantity * item.Price).ToString("N2"))</strong>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-muted">Ürün bilgileri yüklenemedi.</p>
+                    }
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Sonraki Adımlar</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center mb-3">
+                            <div class="bg-light rounded p-3">
+                                <i class="fas fa-envelope text-primary mb-2" style="font-size: 2rem;"></i>
+                                <h6>E-posta Onayı</h6>
+                                <p class="small text-muted">Sipariş onayı e-postanıza gönderilecek</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center mb-3">
+                            <div class="bg-light rounded p-3">
+                                <i class="fas fa-box text-warning mb-2" style="font-size: 2rem;"></i>
+                                <h6>Hazırlanıyor</h6>
+                                <p class="small text-muted">Siparişiniz hazırlanmaya başlanacak</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center mb-3">
+                            <div class="bg-light rounded p-3">
+                                <i class="fas fa-truck text-success mb-2" style="font-size: 2rem;"></i>
+                                <h6>Kargo</h6>
+                                <p class="small text-muted">Kargo bilgileri size iletilecek</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <a href="/Customer/Product/Products" class="btn btn-primary btn-lg me-3">
+                    <i class="fas fa-shopping-bag me-2"></i>Alışverişe Devam Et
+                </a>
+                <a href="/Customer/CustomerOrder/Orders" class="btn btn-outline-secondary btn-lg">
+                    <i class="fas fa-list me-2"></i>Siparişlerimi Görüntüle
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .product-link:hover {
+        color: #007bff !important;
+        text-decoration: underline !important;
+    }
+    
+    .product-image-link:hover {
+        transform: scale(1.05) !important;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+    }
+    
+    .product-image-link {
+        cursor: pointer;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Ürün linklerine tıklama animasyonu
+        const productLinks = document.querySelectorAll('.product-link, .product-image-link');
+        productLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 200);
+            });
+        });
+    });
+</script> 

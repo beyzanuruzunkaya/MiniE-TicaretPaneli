@@ -3,23 +3,18 @@ using Microsoft.EntityFrameworkCore;
 using MiniE_TicaretPaneli.Data;
 using MiniE_TicaretPaneli.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using System;
-using Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation; // Razor Runtime Compilation için
 using Microsoft.AspNetCore.CookiePolicy; // CookiePolicyOptions için
-using Microsoft.AspNetCore.Antiforgery; // Antiforgery için
-using Microsoft.Extensions.Logging; // ILogger için
-using Microsoft.AspNetCore.Hosting; // IWebHostEnvironment için (otomatik enjekte edilir)
-using System.Collections.Generic;
-using System.Linq;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ************************************************************
-// 1. SERVICES CONFIGURATION (Servislerin Yapılandırılması)
-// ************************************************************
 
-// MVC Controller'ları ve View'ları ekle
-builder.Services.AddMemoryCache();
+// 1. SERVICES CONFIGURATION (Servislerin Yapılandırılması)
+
+builder.Services.AddSession();
+
+
+
 
 builder.Services.AddControllersWithViews()
     .AddRazorOptions(options =>
@@ -39,8 +34,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Çerez politikası ayarları (GDPR uyumluluğu ve güvenlik için)
 builder.Services.Configure<CookiePolicyOptions>(options =>
 {
-    options.Secure = CookieSecurePolicy.Always; // Çerezlerin sadece HTTPS üzerinden gönderilmesini zorunlu kıl
-    options.MinimumSameSitePolicy = SameSiteMode.Strict; // Daha katı SameSite politikası
+    options.Secure = CookieSecurePolicy.None; // Geliştirme için None
+    options.MinimumSameSitePolicy = SameSiteMode.Lax; // Geliştirme için daha esnek
     options.HttpOnly = HttpOnlyPolicy.Always; // JavaScript erişimini engelle
 });
 
@@ -53,14 +48,15 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.AccessDeniedPath = "/Account/AccessDenied"; // Yetkisi olmadığında yönlendirilecek sayfa
         options.ExpireTimeSpan = TimeSpan.FromMinutes(30); // Oturum süresi
         options.SlidingExpiration = true;             // Oturum süresini otomatik uzat
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Çerezin güvenli (HTTPS) olmasını zorunlu kıl
+        options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Geliştirme için None
+        options.Cookie.SameSite = SameSiteMode.Lax; // Geliştirme için daha esnek
         options.Cookie.IsEssential = true;            // Çerezin uygulamanın çalışması için gerekli olduğunu belirtir
     });
 
 // Antiforgery token'ı için çerez güvenliği ayarı
 builder.Services.AddAntiforgery(options =>
 {
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.None;
 });
 
 // Yetkilendirme servislerini ekle
@@ -71,6 +67,7 @@ builder.Services.AddAuthorization(options =>
 });
 
 var app = builder.Build();
+app.UseSession();
 
 // ************************************************************
 // 2. HTTP REQUEST PIPELINE CONFIGURATION (HTTP İstek İşlem Hattının Yapılandırılması)
@@ -88,8 +85,11 @@ else
     app.UseHsts();
 }
 
-// HTTPS'e yönlendirme
-app.UseHttpsRedirection();
+// HTTPS'e yönlendirme (sadece production'da)
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 // Statik dosyaları (wwwroot klasöründeki CSS, JS, resimler vb.) sunar
 app.UseStaticFiles();
@@ -99,6 +99,9 @@ app.UseCookiePolicy();
 
 // Routing middleware'ini etkinleştirir
 app.UseRouting();
+
+// Session middleware'ini etkinleştirir (UseRouting'den sonra)
+app.UseSession();
 
 // Kimlik Doğrulama middleware'ini etkinleştirir (UseRouting'den sonra, UseAuthorization'dan önce)
 app.UseAuthentication();

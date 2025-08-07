@@ -1,124 +1,290 @@
-﻿@model IEnumerable<MiniE_TicaretPaneli.Models.ShoppingCart>
-
+﻿@model List<MiniE_TicaretPaneli.Models.ShoppingCart>
 @{
     ViewData["Title"] = "Sepetim";
-    float totalAmount = 0;
-    if (Model != null)
+}
+
+<div class="container mt-4">
+    <h2 class="text-center mb-4">Sepetim</h2>
+
+    @if (TempData["SuccessMessage"] != null)
     {
-        totalAmount = Model.Sum(item => (float)item.Product.Price * item.Quantity);
-    }
-}
-
-<h1 class="mb-4">Sepetim</h1>
-
-@if (TempData["SuccessMessage"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        @TempData["SuccessMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-}
-@if (TempData["ErrorMessage"] != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        @TempData["ErrorMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-}
-
-@if (Model == null || !Model.Any())
-{
-    <div class="alert alert-info text-center">Sepetinizde ürün bulunmamaktadır. <a asp-controller="Customer" asp-action="Products">Alışverişe Başlayın!</a></div>
-}
-else
-{
-    <div class="card shadow-sm p-4 mb-4">
-        <div class="table-responsive">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Görsel</th>
-                        <th>Ürün Adı</th>
-                        <th>Beden</th>
-                        <th>Birim Fiyat</th>
-                        <th>Adet</th>
-                        <th>Toplam</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (ShoppingCart item in Model)
-                    {
-                        <tr>
-                            <td><img src="@item.Product.ImageUrl" alt="@item.Product.Name" style="width: 60px; height: 60px; object-fit: cover; border-radius: 3px;"></td>
-                            <td>@item.Product.Name</td>
-                            <td>
-                                <form asp-action="UpdateCartItemSize" asp-controller="Cart" method="post" class="d-inline">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="cartItemId" value="@item.Id" />
-                                    <select name="newSize" class="form-select form-select-sm" style="width: 100px; display: inline-block;" onchange="this.form.submit()">
-                                        @foreach (var size in (item.Product.AvailableSizes ?? "").Split(',', System.StringSplitOptions.RemoveEmptyEntries))
-                                        {
-                                            <option value="@size" selected="@(item.SelectedSize == size ? "selected" : null)">@size</option>
-                                        }
-                                    </select>
-                                </form>
-                            </td>
-                            <td>@item.Product.Price.ToString("C2")</td>
-                            <td>
-                                <form asp-action="UpdateCartItem" asp-controller="Cart" method="post" class="d-flex">
-                                   
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="cartItemId" value="@item.Id" />
-                                    <input type="number" name="newQuantity" value="@item.Quantity" min="1" max="@item.Product.Stock" class="form-control form-control-sm text-center" style="width: 70px;" onchange="this.form.submit()">
-                                </form>
-                            </td>
-                            <td>@(((float)item.Product.Price * item.Quantity).ToString("C2"))</td>
-                            <td>
-                                <form asp-action="RemoveFromCart" asp-controller="Cart" method="post" class="d-inline">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="cartItemId" value="@item.Id" />
-                                    <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash-alt"></i></button>
-                                </form>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-
-        <div class="d-flex justify-content-end align-items-center mt-3">
-            <h4 class="me-3">Genel Toplam: <span class="text-success fw-bold">@totalAmount.ToString("C2")</span></h4>
-            <a asp-action="Checkout" asp-controller="CustomerOrder" asp-area="" class="btn btn-success btn-lg">
-                <i class="fas fa-money-check-alt me-2"></i>Ödemeye Geç
-            </a>
-        </div>
-    </div>
-}
-
-@section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script>
-        $(document).ready(function () {
-            // Sepet silme butonunda SweetAlert onayı
-            $('form[action$="/Customer/RemoveFromCart"] button[type="submit"]').on('click', function (e) {
-                e.preventDefault();
-                var form = $(this).closest('form');
-                Swal.fire({
-                    title: 'Ürünü silmek istediğinize emin misiniz?',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Evet, sil',
-                    cancelButtonText: 'Vazgeç',
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        form.submit();
-                    }
-                });
-            });
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="text-center py-5">
+            <div class="alert alert-info">
+                <h4>Sepetinizde ürün bulunmamaktadır.</h4>
+                <p>Alışverişe başlamak için <a href="/Customer/Product/Products" class="alert-link">ürünler sayfasına</a> gidin.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-md-8">
+                @foreach (var item in Model)
+                {
+                    <div class="card mb-3">
+                        <div class="row g-0">
+                            <div class="col-md-3">
+                                @if (!string.IsNullOrEmpty(item.Product?.ImageUrl))
+                                {
+                                    <a href="/Customer/Product/ProductDetail/@item.ProductId" 
+                                       class="text-decoration-none"
+                                       title="Ürün detayını görüntüle">
+                                        <img src="@item.Product.ImageUrl" 
+                                             class="img-fluid rounded-start product-image-link" 
+                                             alt="@item.Product.Name" 
+                                             style="height: 200px; object-fit: cover; transition: transform 0.2s;">
+                                    </a>
+                                }
+                                else
+                                {
+                                    <a href="/Customer/Product/ProductDetail/@item.ProductId" 
+                                       class="text-decoration-none"
+                                       title="Ürün detayını görüntüle">
+                                        <div class="bg-light d-flex align-items-center justify-content-center product-image-link" 
+                                             style="height: 200px; transition: transform 0.2s;">
+                                            <span class="text-muted">Resim Yok</span>
+                                        </div>
+                                    </a>
+                                }
+                            </div>
+                            <div class="col-md-9">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                            <a href="/Customer/Product/ProductDetail/@item.ProductId" 
+                                               class="text-decoration-none text-dark product-link"
+                                               title="Ürün detayını görüntüle">
+                                                <h5 class="card-title">
+                                                    @item.Product?.Name
+                                                    <i class="fas fa-external-link-alt ms-1 text-muted" style="font-size: 0.8rem;"></i>
+                                                </h5>
+                                            </a>
+                                            <p class="card-text text-muted">@item.Product?.Description</p>
+                                            
+                                            <div class="row mb-2">
+                                                <div class="col-md-6">
+                                                    <strong>Beden:</strong> @item.SelectedSize
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <strong>Fiyat:</strong> ₺@item.Product?.Price.ToString("N2")
+                                                </div>
+                                            </div>
+
+                                            <div class="row mb-3">
+                                                <div class="col-md-6">
+                                                    <label for="quantity-@item.Id" class="form-label">Miktar:</label>
+                                                    <div class="input-group" style="width: 120px;">
+                                                        <button class="btn btn-outline-secondary" type="button" onclick="updateQuantity(@item.Id, -1)">-</button>
+                                                        <input type="number" class="form-control text-center" id="quantity-@item.Id" value="@item.Quantity" min="1" max="@item.Product?.Stock" readonly>
+                                                        <button class="btn btn-outline-secondary" type="button" onclick="updateQuantity(@item.Id, 1)">+</button>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="size-@item.Id" class="form-label">Beden Değiştir:</label>
+                                                    <select class="form-select" id="size-@item.Id" onchange="updateSize(@item.Id, this.value)">
+                                                        @if (item.Product?.AvailableSizes != null)
+                                                        {
+                                                            var sizes = item.Product.AvailableSizes.Split(',');
+                                                            foreach (var size in sizes)
+                                                            {
+                                                                var selected = size.Trim() == item.SelectedSize ? "selected" : "";
+                                                                <option value="@size.Trim()" selected="@(size.Trim() == item.SelectedSize)">@size.Trim()</option>
+                                                            }
+                                                        }
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <strong>Toplam:</strong> ₺@((item.Quantity * item.Product?.Price ?? 0).ToString("N2"))
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <form asp-action="RemoveFromCart" method="post" style="display: inline;">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="cartItemId" value="@item.Id" />
+                                                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Bu ürünü sepetten kaldırmak istediğinizden emin misiniz?')">
+                                                            <i class="fas fa-trash"></i> Kaldır
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Sepet Özeti</h5>
+                    </div>
+                    <div class="card-body">
+                        @{
+                            var totalItems = Model.Sum(item => item.Quantity);
+                            var totalPrice = Model.Sum(item => item.Quantity * (item.Product?.Price ?? 0));
+                        }
+                        
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Toplam Ürün:</span>
+                            <span>@totalItems adet</span>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Toplam Tutar:</span>
+                            <span class="fw-bold">₺@totalPrice.ToString("N2")</span>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="d-grid gap-2">
+                            <a href="/Customer/Product/Products" class="btn btn-outline-primary">
+                                <i class="fas fa-shopping-bag"></i> Alışverişe Devam Et
+                            </a>
+                            
+                            @if (Model.Any())
+                            {
+                                <a href="/Customer/Checkout/Checkout" class="btn btn-success">
+                                    <i class="fas fa-credit-card"></i> Ödemeye Geç
+                                </a>
+                                
+                                <form asp-action="ClearCart" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Sepeti tamamen temizlemek istediğinizden emin misiniz?')">
+                                        <i class="fas fa-trash"></i> Sepeti Temizle
+                                    </button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .product-link:hover {
+        color: #007bff !important;
+        text-decoration: underline !important;
+    }
+    
+    .product-image-link:hover {
+        transform: scale(1.05) !important;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+    }
+    
+    .product-image-link {
+        cursor: pointer;
+    }
+    
+    .card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transition: box-shadow 0.3s ease;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Ürün linklerine tıklama animasyonu
+    const productLinks = document.querySelectorAll('.product-link, .product-image-link');
+    productLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            this.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                this.style.transform = '';
+            }, 200);
         });
-    </script>
+    });
+});
+
+function updateQuantity(cartItemId, change) {
+    const input = document.getElementById(`quantity-${cartItemId}`);
+    const currentValue = parseInt(input.value);
+    const newValue = currentValue + change;
+    
+    if (newValue >= 1) {
+        // Form oluştur ve gönder
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/Customer/Cart/UpdateCartItem';
+        
+        // CSRF token ekle
+        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+        const tokenInput = document.createElement('input');
+        tokenInput.type = 'hidden';
+        tokenInput.name = '__RequestVerificationToken';
+        tokenInput.value = token;
+        form.appendChild(tokenInput);
+        
+        // Cart item ID ekle
+        const cartItemInput = document.createElement('input');
+        cartItemInput.type = 'hidden';
+        cartItemInput.name = 'cartItemId';
+        cartItemInput.value = cartItemId;
+        form.appendChild(cartItemInput);
+        
+        // Quantity ekle
+        const quantityInput = document.createElement('input');
+        quantityInput.type = 'hidden';
+        quantityInput.name = 'newQuantity';
+        quantityInput.value = newValue;
+        form.appendChild(quantityInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
 }
+
+function updateSize(cartItemId, newSize) {
+    // Form oluştur ve gönder
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/Customer/Cart/UpdateCartItemSize';
+    
+    // CSRF token ekle
+    const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+    const tokenInput = document.createElement('input');
+    tokenInput.type = 'hidden';
+    tokenInput.name = '__RequestVerificationToken';
+    tokenInput.value = token;
+    form.appendChild(tokenInput);
+    
+    // Cart item ID ekle
+    const cartItemInput = document.createElement('input');
+    cartItemInput.type = 'hidden';
+    cartItemInput.name = 'cartItemId';
+    cartItemInput.value = cartItemId;
+    form.appendChild(cartItemInput);
+    
+    // Size ekle
+    const sizeInput = document.createElement('input');
+    sizeInput.type = 'hidden';
+    sizeInput.name = 'newSize';
+    sizeInput.value = newSize;
+    form.appendChild(sizeInput);
+    
+    document.body.appendChild(form);
+    form.submit();
+}
+</script>

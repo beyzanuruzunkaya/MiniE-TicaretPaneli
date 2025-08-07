@@ -2,18 +2,44 @@
 
 @{
     ViewData["Title"] = "Siparişlerim";
+    
+    string GetStatusText(string status)
+    {
+        return status switch
+        {
+            "Pending" => "Beklemede",
+            "Processing" => "İşleniyor",
+            "Shipped" => "Kargoda",
+            "Delivered" => "Teslim Edildi",
+            "Cancelled" => "İptal Edildi",
+            "Order Received" => "Siparişiniz Alındı",
+            _ => status
+        };
+    }
 }
 
-<h1 class="mb-4">Siparişlerim</h1>
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-shopping-bag me-2 text-primary"></i>Siparişlerim
+                </h1>
+                <a asp-controller="Product" asp-action="Products" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Yeni Sipariş
+                </a>
+            </div>
 
 @if (!Model.Any())
 {
-    <div class="alert alert-info text-center">
-        <i class="fas fa-info-circle me-2"></i>
-        Henüz bir siparişiniz bulunmuyor.
-        <br>
-        <a asp-controller="Product" asp-action="Products" class="btn btn-primary mt-3">
-            <i class="fas fa-shopping-bag me-2"></i>Alışverişe Başla
+    <div class="text-center py-5">
+        <div class="mb-4">
+            <i class="fas fa-shopping-bag fa-4x text-muted"></i>
+        </div>
+        <h4 class="text-muted mb-3">Henüz bir siparişiniz bulunmuyor</h4>
+        <p class="text-muted mb-4">İlk siparişinizi vermek için alışverişe başlayın!</p>
+        <a asp-controller="Product" asp-action="Products" class="btn btn-primary btn-lg">
+            <i class="fas fa-shopping-cart me-2"></i>Alışverişe Başla
         </a>
     </div>
 }
@@ -36,9 +62,9 @@ else
                                 <small class="text-muted">@order.OrderDate.ToString("dd.MM.yyyy HH:mm")</small>
                             </div>
                             <div class="text-end">
-                                <span class="badge bg-primary fs-6">@order.TotalAmount.ToString("C2")</span>
+                                <span class="badge bg-primary fs-6">₺@order.TotalAmount.ToString("N2")</span>
                                 <br>
-                                <span class="badge bg-secondary">@order.Status</span>
+                                <span class="badge bg-secondary">@GetStatusText(order.Status)</span>
                             </div>
                         </div>
                     </button>
@@ -49,14 +75,22 @@ else
                         {
                             <div class="alert alert-danger mb-3">Bu sipariş iptal edilmiştir.</div>
                         }
+                        else if (order.Status == "Delivered")
+                        {
+                            <div class="alert alert-success mb-3">Bu sipariş başarıyla teslim edilmiştir.</div>
+                        }
+                        else if (order.Status == "Shipped")
+                        {
+                            <div class="alert alert-info mb-3">Bu sipariş kargoya verilmiştir.</div>
+                        }
                         <div class="table-responsive">
                             <table class="table table-hover">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Ürün</th>
-                                        <th class="text-center">Adet</th>
-                                        <th class="text-end">Birim Fiyat</th>
-                                        <th class="text-end">Toplam</th>
+                                        <th style="width: 50%;">Ürün</th>
+                                        <th class="text-center" style="width: 15%;">Adet</th>
+                                        <th class="text-end" style="width: 15%;">Birim Fiyat</th>
+                                        <th class="text-end" style="width: 20%;">Toplam</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -66,11 +100,42 @@ else
                                             <td>
                                                 <div class="d-flex align-items-center">
                                                     <div class="me-3">
-                                                        <i class="fas fa-box text-primary"></i>
+                                                        @if (!string.IsNullOrEmpty(item.Product?.ImageUrl))
+                                                        {
+                                                            <a href="/Customer/Product/ProductDetail/@item.ProductId" 
+                                                               class="text-decoration-none product-image-link"
+                                                               title="Ürün detayını görüntüle">
+                                                                <img src="@item.Product.ImageUrl" 
+                                                                     class="img-thumbnail" 
+                                                                     alt="@item.Product.Name" 
+                                                                     style="width: 60px; height: 60px; object-fit: cover; transition: transform 0.2s;">
+                                                            </a>
+                                                        }
+                                                        else
+                                                        {
+                                                            <a href="/Customer/Product/ProductDetail/@item.ProductId" 
+                                                               class="text-decoration-none product-image-link"
+                                                               title="Ürün detayını görüntüle">
+                                                                <div class="bg-light d-flex align-items-center justify-content-center rounded" 
+                                                                     style="width: 60px; height: 60px; transition: transform 0.2s;">
+                                                                    <i class="fas fa-image text-muted"></i>
+                                                                </div>
+                                                            </a>
+                                                        }
                                                     </div>
                                                     <div>
-                                                        <strong>@item.Product.Name</strong>
-                                                        @if (item.Product.MainCategory != null)
+                                                        <a href="/Customer/Product/ProductDetail/@item.ProductId" 
+                                                           class="text-decoration-none text-dark fw-bold product-link"
+                                                           title="Ürün detayını görüntüle">
+                                                            @item.Product?.Name
+                                                            <i class="fas fa-external-link-alt ms-1 text-muted" style="font-size: 0.8rem;"></i>
+                                                        </a>
+                                                        @if (!string.IsNullOrEmpty(item.SelectedSize))
+                                                        {
+                                                            <br>
+                                                            <small class="text-muted">Beden: @item.SelectedSize</small>
+                                                        }
+                                                        @if (item.Product?.MainCategory != null)
                                                         {
                                                             <br>
                                                             <small class="text-muted">@item.Product.MainCategory.Name</small>
@@ -81,15 +146,15 @@ else
                                             <td class="text-center">
                                                 <span class="badge bg-info">@item.Quantity</span>
                                             </td>
-                                            <td class="text-end">@item.UnitPrice.ToString("C2")</td>
-                                            <td class="text-end fw-bold">@((item.UnitPrice * item.Quantity).ToString("C2"))</td>
+                                            <td class="text-end">₺@item.UnitPrice.ToString("N2")</td>
+                                            <td class="text-end fw-bold">₺@((item.UnitPrice * item.Quantity).ToString("N2"))</td>
                                         </tr>
                                     }
                                 </tbody>
                                 <tfoot class="table-light">
                                     <tr>
                                         <td colspan="3" class="text-end"><strong>Toplam:</strong></td>
-                                        <td class="text-end"><strong>@order.TotalAmount.ToString("C2")</strong></td>
+                                        <td class="text-end"><strong>₺@order.TotalAmount.ToString("N2")</strong></td>
                                     </tr>
                                 </tfoot>
                             </table>
@@ -104,20 +169,39 @@ else
             </div>
         }
     </div>
-}
 
+}
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .product-link:hover {
+            color: #007bff !important;
+            text-decoration: underline !important;
+        }
+        
+        .product-image-link:hover {
+            transform: scale(1.05) !important;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+        }
+        
+        .product-image-link {
+            cursor: pointer;
+        }
+        
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+    </style>
     <script>
         $(document).ready(function () {
             $('.btn-cancel-order').click(function (e) {
                 var status = $(this).data('status');
                 var form = $(this).closest('form');
                 // Sadece Processing veya Siparişiniz alındı ise iptal edilsin
-                if (status === 'Processing' || status === 'Siparişiniz alındı') {
+                if (status === 'Processing' || status === 'Order Received' || status === 'Pending') {
                     e.preventDefault();
                     Swal.fire({
                         title: 'Emin misiniz?',
@@ -141,6 +225,14 @@ else
                         text: 'Bu aşamadaki bir siparişi iptal edemezsiniz.'
                     });
                 }
+            });
+            
+            // Ürün linklerine tıklama animasyonu
+            $('.product-link, .product-image-link').click(function() {
+                $(this).addClass('clicked');
+                setTimeout(() => {
+                    $(this).removeClass('clicked');
+                }, 200);
             });
         });
     </script>

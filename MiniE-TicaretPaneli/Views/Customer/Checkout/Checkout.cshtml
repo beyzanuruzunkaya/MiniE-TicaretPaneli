@@ -1,0 +1,313 @@
+@model MiniE_TicaretPaneli.Controllers.Customer.CheckoutViewModel
+@{
+    ViewData["Title"] = "Ödeme";
+}
+
+<div class="container mt-4">
+    <h2 class="text-center mb-4">Ödeme Sayfası</h2>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <form asp-action="ProcessOrder" method="post">
+        @Html.AntiForgeryToken()
+        
+        <div class="row">
+            <!-- Sol Taraf - Sipariş Özeti -->
+            <div class="col-md-8">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Sipariş Özeti</h5>
+                    </div>
+                    <div class="card-body">
+                        @foreach (var item in Model.CartItems)
+                        {
+                            <div class="row mb-3 align-items-center">
+                                <div class="col-md-2">
+                                    @if (!string.IsNullOrEmpty(item.Product?.ImageUrl))
+                                    {
+                                        <img src="@item.Product.ImageUrl" class="img-fluid rounded" alt="@item.Product.Name">
+                                    }
+                                    else
+                                    {
+                                        <div class="bg-light d-flex align-items-center justify-content-center rounded" style="height: 80px;">
+                                            <span class="text-muted small">Resim Yok</span>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="mb-1">@item.Product?.Name</h6>
+                                    <p class="text-muted mb-1">Beden: @item.SelectedSize</p>
+                                    <p class="text-muted mb-0">Birim Fiyat: ₺@item.Product?.Price.ToString("N2")</p>
+                                </div>
+                                <div class="col-md-2 text-center">
+                                    <span class="badge bg-secondary">@item.Quantity adet</span>
+                                </div>
+                                <div class="col-md-2 text-end">
+                                    <strong>₺@((item.Quantity * (item.Product?.Price ?? 0)).ToString("N2"))</strong>
+                                </div>
+                            </div>
+                        }
+                        
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <h5>Toplam Tutar:</h5>
+                            <h5 class="text-success">₺@Model.TotalAmount.ToString("N2")</h5>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Teslimat Adresi -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Teslimat Adresi</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="UseNewAddress" id="useExistingAddress" value="false" checked>
+                            <label class="form-check-label" for="useExistingAddress">
+                                Kayıtlı adreslerimden seç
+                            </label>
+                        </div>
+
+                        @if (Model.Addresses.Any())
+                        {
+                            <div id="existingAddresses">
+                                @foreach (var address in Model.Addresses)
+                                {
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="radio" name="SelectedAddressId" value="@address.Id" id="address_@address.Id">
+                                        <label class="form-check-label" for="address_@address.Id">
+                                            @address.AddressLine, @address.City, @address.District @address.PostalCode
+                                        </label>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-info">
+                                Kayıtlı adresiniz bulunmamaktadır. Yeni adres ekleyin.
+                            </div>
+                        }
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="UseNewAddress" id="useNewAddress" value="true">
+                            <label class="form-check-label" for="useNewAddress">
+                                Yeni adres ekle
+                            </label>
+                        </div>
+
+                        <div id="newAddressForm" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label asp-for="NewAddress.Street" class="form-label">Sokak/Cadde</label>
+                                    <input asp-for="NewAddress.Street" class="form-control" placeholder="Sokak adı ve numara">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label asp-for="NewAddress.City" class="form-label">Şehir</label>
+                                    <input asp-for="NewAddress.City" class="form-control" placeholder="Şehir">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label asp-for="NewAddress.State" class="form-label">İlçe</label>
+                                    <input asp-for="NewAddress.State" class="form-control" placeholder="İlçe">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label asp-for="NewAddress.ZipCode" class="form-label">Posta Kodu</label>
+                                    <input asp-for="NewAddress.ZipCode" class="form-control" placeholder="Posta kodu">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label asp-for="NewAddress.Country" class="form-label">Ülke</label>
+                                    <input asp-for="NewAddress.Country" class="form-control" value="Türkiye" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ödeme Yöntemi -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Ödeme Yöntemi</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="UseNewCreditCard" id="useExistingCard" value="false" checked>
+                            <label class="form-check-label" for="useExistingCard">
+                                Kayıtlı kredi kartlarım
+                            </label>
+                        </div>
+
+                        @if (Model.CreditCards.Any())
+                        {
+                            <div id="existingCards">
+                                @foreach (var card in Model.CreditCards)
+                                {
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="radio" name="SelectedCreditCardId" value="@card.Id" id="card_@card.Id">
+                                        <label class="form-check-label" for="card_@card.Id">
+                                            @card.CardHolderName - **** **** **** @card.CardNumberLastFour
+                                        </label>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-info">
+                                Kayıtlı kredi kartınız bulunmamaktadır. Yeni kart ekleyin.
+                            </div>
+                        }
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="UseNewCreditCard" id="useNewCard" value="true">
+                            <label class="form-check-label" for="useNewCard">
+                                Yeni kredi kartı ekle
+                            </label>
+                        </div>
+
+                        <div id="newCardForm" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label asp-for="NewCreditCard.CardHolderName" class="form-label">Kart Sahibinin Adı</label>
+                                    <input asp-for="NewCreditCard.CardHolderName" class="form-control" placeholder="Ad Soyad">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-8 mb-3">
+                                    <label asp-for="NewCreditCard.CardNumber" class="form-label">Kart Numarası</label>
+                                    <input asp-for="NewCreditCard.CardNumber" class="form-control" placeholder="1234 5678 9012 3456" maxlength="19">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label asp-for="NewCreditCard.CVV" class="form-label">CVV</label>
+                                    <input asp-for="NewCreditCard.CVV" class="form-control" placeholder="123" maxlength="3">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label asp-for="NewCreditCard.ExpiryMonth" class="form-label">Son Kullanma Ayı</label>
+                                    <select asp-for="NewCreditCard.ExpiryMonth" class="form-select">
+                                        <option value="">Ay seçin</option>
+                                        @for (int i = 1; i <= 12; i++)
+                                        {
+                                            <option value="@i">@i.ToString("00")</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label asp-for="NewCreditCard.ExpiryYear" class="form-label">Son Kullanma Yılı</label>
+                                    <select asp-for="NewCreditCard.ExpiryYear" class="form-select">
+                                        <option value="">Yıl seçin</option>
+                                        @for (int i = DateTime.Now.Year; i <= DateTime.Now.Year + 10; i++)
+                                        {
+                                            <option value="@i">@i</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sağ Taraf - Özet -->
+            <div class="col-md-4">
+                <div class="card sticky-top" style="top: 20px;">
+                    <div class="card-header">
+                        <h5 class="mb-0">Sipariş Özeti</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Ürün Sayısı:</span>
+                            <span>@Model.CartItems.Sum(i => i.Quantity) adet</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Kargo:</span>
+                            <span class="text-success">Ücretsiz</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between mb-3">
+                            <strong>Toplam:</strong>
+                            <strong class="text-success fs-5">₺@Model.TotalAmount.ToString("N2")</strong>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-success btn-lg w-100">
+                            <i class="fas fa-credit-card me-2"></i>Siparişi Tamamla
+                        </button>
+                        
+                        <div class="mt-3">
+                            <a href="/Customer/Cart/Cart" class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-arrow-left me-2"></i>Sepete Geri Dön
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        // Adres seçimi
+        document.querySelectorAll('input[name="UseNewAddress"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const existingAddresses = document.getElementById('existingAddresses');
+                const newAddressForm = document.getElementById('newAddressForm');
+                
+                if (this.value === 'true') {
+                    existingAddresses.style.display = 'none';
+                    newAddressForm.style.display = 'block';
+                } else {
+                    existingAddresses.style.display = 'block';
+                    newAddressForm.style.display = 'none';
+                }
+            });
+        });
+
+        // Kredi kartı seçimi
+        document.querySelectorAll('input[name="UseNewCreditCard"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const existingCards = document.getElementById('existingCards');
+                const newCardForm = document.getElementById('newCardForm');
+                
+                if (this.value === 'true') {
+                    existingCards.style.display = 'none';
+                    newCardForm.style.display = 'block';
+                } else {
+                    existingCards.style.display = 'block';
+                    newCardForm.style.display = 'none';
+                }
+            });
+        });
+
+        // Kart numarası formatı
+        document.getElementById('NewCreditCard_CardNumber').addEventListener('input', function() {
+            let value = this.value.replace(/\D/g, '');
+            value = value.replace(/(\d{4})(?=\d)/g, '$1 ');
+            this.value = value;
+        });
+
+        // CVV sadece rakam
+        document.getElementById('NewCreditCard_CVV').addEventListener('input', function() {
+            this.value = this.value.replace(/\D/g, '');
+        });
+    </script>
+} 

@@ -1,29 +1,37 @@
 ﻿// Controllers/Customer/CartController.cs
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization; // Authorize attribute'u kaldırıldığı için bu using'e artık gerek yok ama bırakabiliriz
+using Microsoft.AspNetCore.Authorization;
 using MiniE_TicaretPaneli.Data;
 using MiniE_TicaretPaneli.Models;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using Microsoft.Extensions.Caching.Memory; // ClaimTypes için
+using Microsoft.Extensions.Caching.Memory;
+using Newtonsoft.Json;
 
 namespace MiniE_TicaretPaneli.Controllers.Customer
 {
-    // [Authorize(Roles = "Customer,Admin")] // BU SATIRI KALDIRILDI! Sepet herkese açık olacak
     [Route("Customer/[controller]/[action]")]
     public class CartController : Controller
     {
         private readonly ApplicationDbContext _context;
         private readonly IMemoryCache _memoryCache;
-        
 
-
-        public CartController(ApplicationDbContext context , IMemoryCache memoryCache)
+        public CartController(ApplicationDbContext context, IMemoryCache memoryCache)
         {
             _context = context;
             _memoryCache = memoryCache;
+        }
+
+        // Database'den sepet verilerini al
+        private async Task<List<ShoppingCart>> GetCartFromDatabase(int userId)
+        {
+            return await _context.CartItems
+                .Include(c => c.Product)
+                .Where(c => c.UserId == userId)
+                .OrderByDescending(c => c.UpdatedAt)
+                .ToListAsync();
         }
 
         [HttpGet]
@@ -31,52 +39,32 @@ namespace MiniE_TicaretPaneli.Controllers.Customer
         {
             ViewData["Title"] = "Sepetim";
 
-            //MemoryCache üzerinden "cartList" adında bir veri aranıyor.
-            //Eğer yoksa: 50 saniye içinde geçerliliği olan yeni bir List<ShoppingCart> oluşturuluyor.
-            var cartCached = await _memoryCache.GetOrCreateAsync<List<ShoppingCart>>("cartList", cacheEntry =>
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
             {
-                cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(50);
-                return Task.FromResult(new List<ShoppingCart>());
-            });
+                TempData["ErrorMessage"] = "Kullanıcı bilgisi alınamadı. Lütfen tekrar giriş yapın.";
+                return RedirectToAction("Login", "Account");
+            }
 
-            //Cache yoksa boş bir sepet listesi oluşturuluyor.
-            if (cartCached == null)
-            {
-                cartCached = new List<ShoppingCart>();
-            }
-            // Eğer Product bilgisi (örneğin ad, fiyat vs.) dolu değilse,
-            // ProductId üzerinden veritabanından Product çekiliyor.
-            foreach (var item in cartCached)
-            {
-                if (item.Product == null)
-                {
-                    item.Product = await _context.Products.FindAsync(item.ProductId);
-                }
-            }
-            //sepet listesi View'a gönderiliyor
-            return View(cartCached);
+            // Database'den sepet verilerini al
+            var cartItems = await GetCartFromDatabase(userId);
+
+            return View(cartItems);
         }
 
-        // POST: /Customer/Cart/AddToCart
         [HttpPost]
         [ValidateAntiForgeryToken]
-
         public async Task<IActionResult> AddToCart(int productId, string selectedSize, int quantity = 1)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            int userId = 0;
-            bool isAuthenticated = userIdClaim != null && int.TryParse(userIdClaim.Value, out userId);
-
-            if (!isAuthenticated)
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
             {
-                TempData.Clear();
                 TempData["ErrorMessage"] = "Ürün eklemek için lütfen giriş yapın.";
                 return RedirectToAction("Login", "Account");
             }
 
             if (string.IsNullOrEmpty(selectedSize))
             {
-                TempData.Clear();
                 TempData["ErrorMessage"] = "Lütfen bir beden seçiniz.";
                 return RedirectToAction("ProductDetail", "Product", new { id = productId });
             }
@@ -84,80 +72,92 @@ namespace MiniE_TicaretPaneli.Controllers.Customer
             var product = await _context.Products.FindAsync(productId);
             if (product == null)
             {
-                TempData.Clear();
                 TempData["ErrorMessage"] = "Ürün bulunamadı.";
                 return RedirectToAction("Products", "Product");
             }
-            //Eğer "cartList" cache’te varsa alır, yoksa 30 dakika geçerli olacak şekilde boş sepet listesi oluşturur.
-            var cartCached = await _memoryCache.GetOrCreateAsync<List<ShoppingCart>>("cartList", cacheEntry =>
-            {
-                cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30);
-                return Task.FromResult(new List<ShoppingCart>());
-            });
 
-            //  Eğer selectedSize bu listede yoksa, hata mesajı gösterilir ve ürün detay sayfasına dönülür.
-
+            // Beden kontrolü
             var validSizes = product.AvailableSizes?.Split(',');
             if (validSizes == null || !validSizes.Contains(selectedSize))
             {
-                TempData.Clear();
                 TempData["ErrorMessage"] = "Geçersiz beden seçimi.";
                 return RedirectToAction("ProductDetail", "Product", new { id = productId });
             }
 
-        // Aynı ürün ve beden zaten sepette varsa: Quantity artırılır.
-        // Yoksa: Yeni bir ShoppingCart nesnesi sepete eklenir.
-            var cartItem = cartCached.FirstOrDefault(ci => ci.ProductId == productId && ci.SelectedSize == selectedSize);
-            if (cartItem != null)
-                cartItem.Quantity += quantity;
+            // Stok kontrolü
+            if (product.Stock < quantity)
+            {
+                TempData["ErrorMessage"] = $"{product.Name} için yeterli stok bulunmamaktadır. Mevcut stok: {product.Stock}";
+                return RedirectToAction("ProductDetail", "Product", new { id = productId });
+            }
+
+            // Database'den mevcut sepeti al
+            var cartItems = await GetCartFromDatabase(userId);
+
+            // Aynı ürün ve beden zaten sepette var mı kontrol et
+            var existingItem = cartItems.FirstOrDefault(ci => ci.ProductId == productId && ci.SelectedSize == selectedSize);
+
+            if (existingItem != null)
+            {
+                // Mevcut ürünün miktarını artır
+                var newQuantity = existingItem.Quantity + quantity;
+                if (product.Stock < newQuantity)
+                {
+                    TempData["ErrorMessage"] = $"{product.Name} için yeterli stok bulunmamaktadır. Mevcut stok: {product.Stock}";
+                    return RedirectToAction("ProductDetail", "Product", new { id = productId });
+                }
+                existingItem.Quantity = newQuantity;
+                existingItem.UpdatedAt = DateTime.Now;
+                _context.CartItems.Update(existingItem);
+            }
             else
-                cartCached.Add(new ShoppingCart
+            {
+                // Yeni ürün ekle
+                var cartItem = new ShoppingCart
                 {
                     UserId = userId,
                     ProductId = productId,
                     Quantity = quantity,
-                    SelectedSize = selectedSize
-                });
+                    SelectedSize = selectedSize,
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
+                };
+                _context.CartItems.Add(cartItem);
+            }
 
-            // Cache'i güncelle
-            _memoryCache.Set("cartList", cartCached);
+            await _context.SaveChangesAsync();
 
-            // Mesajları temizle ve yeni mesajı set et
-            TempData.Clear();
-            TempData["SuccessMessage"] = "Ürün sepete eklendi!";
-            return RedirectToAction("Cart");
+            // Cache'den sepeti temizle (güncelleme için)
+            var cartCacheKey = $"UserCart_{userId}";
+            _memoryCache.Remove(cartCacheKey);
+
+            TempData["SuccessMessage"] = $"'{product.Name}' sepete eklendi!";
+            
+            // Sepete yönlendir
+            return RedirectToAction("Cart", "Cart");
         }
-
-
 
         // POST: /Customer/Cart/UpdateCartItem
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateCartItem(int cartItemId, int newQuantity)
         {
-            //Giriş yapan kullanıcının userId bilgisi alınıyor.
-            // Eğer kullanıcı tanımlı değilse ⇒ Login sayfasına yönlendiriliyor.
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
             if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
             {
                 TempData["ErrorMessage"] = "Kullanıcı bilgisi alınamadı. Lütfen tekrar giriş yapın.";
                 return RedirectToAction("Login", "Account");
             }
-            //cartItemId ile veritabanından sepetteki ürün satırı çekilir.
-            var cartItem = await _context.CartItems.FindAsync(cartItemId);
+
+            // Database'den sepet öğesini al
+            var cartItem = await _context.CartItems.FirstOrDefaultAsync(ci => ci.Id == cartItemId && ci.UserId == userId);
+
             if (cartItem == null)
             {
                 TempData["ErrorMessage"] = "Sepet öğesi bulunamadı.";
                 return RedirectToAction("Cart");
             }
 
-            //Sepet öğesi başka bir kullanıcıya aitse ⇒ işlem engellenir.
-            if (cartItem.UserId != userId)
-            {
-                TempData["ErrorMessage"] = "Yetkisiz işlem.";
-                return RedirectToAction("Cart");
-            }
-            //Kullanıcı 0 ya da negatif miktar girerse ⇒ ürün sepetten silinir.
             if (newQuantity <= 0)
             {
                 _context.CartItems.Remove(cartItem);
@@ -165,8 +165,6 @@ namespace MiniE_TicaretPaneli.Controllers.Customer
             }
             else
             {
-                //Stok yeterli değilse ⇒ hata mesajı gösterilir.
-                //stok uygunsa ⇒ ürünün Quantity (miktarı) güncellenir.
                 var product = await _context.Products.FindAsync(cartItem.ProductId);
                 if (product != null && product.Stock < newQuantity)
                 {
@@ -174,9 +172,17 @@ namespace MiniE_TicaretPaneli.Controllers.Customer
                     return RedirectToAction("Cart");
                 }
                 cartItem.Quantity = newQuantity;
+                cartItem.UpdatedAt = DateTime.Now;
+                _context.CartItems.Update(cartItem);
                 TempData["SuccessMessage"] = "Sepet güncellendi.";
             }
+
             await _context.SaveChangesAsync();
+
+            // Cache'den de sepeti temizle (güncelleme için)
+            var cartCacheKey = $"UserCart_{userId}";
+            _memoryCache.Remove(cartCacheKey);
+
             return RedirectToAction("Cart");
         }
 
@@ -185,32 +191,45 @@ namespace MiniE_TicaretPaneli.Controllers.Customer
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateCartItemSize(int cartItemId, string newSize)
         {
-
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
             if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
             {
                 TempData["ErrorMessage"] = "Kullanıcı bilgisi alınamadı. Lütfen tekrar giriş yapın.";
                 return RedirectToAction("Login", "Account");
             }
-            //Sepetteki ürün bilgisi cartItemId ile veritabanından çekilir.
-            var cartItem = await _context.CartItems.Include(ci => ci.Product).FirstOrDefaultAsync(ci => ci.Id == cartItemId);
+
+            // Database'den sepet öğesini al
+            var cartItem = await _context.CartItems.FirstOrDefaultAsync(ci => ci.Id == cartItemId && ci.UserId == userId);
+
             if (cartItem == null)
             {
                 TempData["ErrorMessage"] = "Sepet öğesi bulunamadı.";
                 return RedirectToAction("Cart");
             }
-            if (cartItem.UserId != userId)
+
+            var product = await _context.Products.FindAsync(cartItem.ProductId);
+            if (product == null)
             {
-                TempData["ErrorMessage"] = "Yetkisiz işlem.";
+                TempData["ErrorMessage"] = "Ürün bulunamadı.";
                 return RedirectToAction("Cart");
             }
-            if (string.IsNullOrEmpty(newSize) || !(cartItem.Product.AvailableSizes ?? "").Split(',', System.StringSplitOptions.RemoveEmptyEntries).Contains(newSize))
+
+            var validSizes = product.AvailableSizes?.Split(',');
+            if (string.IsNullOrEmpty(newSize) || validSizes == null || !validSizes.Contains(newSize))
             {
                 TempData["ErrorMessage"] = "Geçersiz beden seçimi.";
                 return RedirectToAction("Cart");
             }
+
             cartItem.SelectedSize = newSize;
+            cartItem.UpdatedAt = DateTime.Now;
+            _context.CartItems.Update(cartItem);
             await _context.SaveChangesAsync();
+
+            // Cache'den de sepeti temizle (güncelleme için)
+            var cartCacheKey = $"UserCart_{userId}";
+            _memoryCache.Remove(cartCacheKey);
+
             TempData["SuccessMessage"] = "Beden güncellendi.";
             return RedirectToAction("Cart");
         }
@@ -227,24 +246,48 @@ namespace MiniE_TicaretPaneli.Controllers.Customer
                 return RedirectToAction("Login", "Account");
             }
 
-            var cartItem = await _context.CartItems.FindAsync(cartItemId);
-            if (cartItem != null)
-            {
-                // Güvenlik: Kullanıcının kendi sepet öğesini sildiğinden emin ol
-                if (cartItem.UserId != userId)
-                {
-                    TempData["ErrorMessage"] = "Yetkisiz işlem.";
-                    return RedirectToAction("Cart");
-                }
+            // Database'den sepet öğesini al
+            var cartItem = await _context.CartItems.FirstOrDefaultAsync(ci => ci.Id == cartItemId && ci.UserId == userId);
 
-                _context.CartItems.Remove(cartItem);
-                await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Ürün sepetten başarıyla kaldırıldı.";
-            }
-            else
+            if (cartItem == null)
             {
                 TempData["ErrorMessage"] = "Sepet öğesi bulunamadı.";
+                return RedirectToAction("Cart");
             }
+
+            _context.CartItems.Remove(cartItem);
+            await _context.SaveChangesAsync();
+
+            // Cache'den de sepeti temizle (güncelleme için)
+            var cartCacheKey = $"UserCart_{userId}";
+            _memoryCache.Remove(cartCacheKey);
+
+            TempData["SuccessMessage"] = "Ürün sepetten kaldırıldı.";
+            return RedirectToAction("Cart");
+        }
+
+        // POST: /Customer/Cart/ClearCart
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ClearCart()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+            {
+                TempData["ErrorMessage"] = "Kullanıcı bilgisi alınamadı. Lütfen tekrar giriş yapın.";
+                return RedirectToAction("Login", "Account");
+            }
+
+            // Database'den kullanıcının tüm sepet öğelerini sil
+            var cartItems = await _context.CartItems.Where(ci => ci.UserId == userId).ToListAsync();
+            _context.CartItems.RemoveRange(cartItems);
+            await _context.SaveChangesAsync();
+
+            // Cache'den de sepeti temizle
+            var cartCacheKey = $"UserCart_{userId}";
+            _memoryCache.Remove(cartCacheKey);
+
+            TempData["SuccessMessage"] = "Sepet temizlendi.";
             return RedirectToAction("Cart");
         }
     }

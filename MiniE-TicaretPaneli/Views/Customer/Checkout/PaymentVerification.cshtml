@@ -1,0 +1,156 @@
+@model MiniE_TicaretPaneli.Controllers.Customer.PaymentVerificationViewModel
+@{
+    ViewData["Title"] = "Ödeme Onayı";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white text-center">
+                    <h3 class="mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>Ödeme Onayı
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h5><i class="fas fa-info-circle me-2"></i>Güvenlik Onayı</h5>
+                        <p class="mb-0">Ödemenizi tamamlamak için SMS ile gönderilen 6 haneli onay kodunu giriniz.</p>
+                    </div>
+                    
+                    <!-- Demo için onay kodunu göster -->
+                    <div class="alert alert-warning">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>Demo Onay Kodu:</strong>
+                                <br><small class="text-muted">Gerçek uygulamada bu kod SMS ile gönderilir.</small>
+                            </div>
+                            <div class="text-end">
+                                <div class="fs-3 fw-bold text-primary mb-2" id="verificationCode">@Model.VerificationCode</div>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="copyCode()">
+                                    <i class="fas fa-copy me-1"></i>Kopyala
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form asp-action="VerifyPayment" method="post">
+                        @Html.AntiForgeryToken()
+                        
+                        <div class="mb-4">
+                            <label for="EnteredCode" class="form-label">Onay Kodu</label>
+                            <input type="text" 
+                                   class="form-control form-control-lg text-center" 
+                                   id="EnteredCode" 
+                                   name="EnteredCode" 
+                                   maxlength="6" 
+                                   pattern="[0-9]{6}" 
+                                   required 
+                                   placeholder="000000"
+                                   style="font-size: 1.5rem; letter-spacing: 0.5rem;">
+                            <div class="form-text">6 haneli onay kodunu giriniz</div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-check me-2"></i>Ödemeyi Onayla
+                            </button>
+                            <a href="/Customer/Checkout/Checkout" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Geri Dön
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Sipariş Özeti -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Sipariş Özeti</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.CartItems != null && Model.CartItems.Any())
+                    {
+                        @foreach (var item in Model.CartItems)
+                        {
+                            <div class="row mb-3 align-items-center">
+                                <div class="col-md-2">
+                                    @if (!string.IsNullOrEmpty(item.Product?.ImageUrl))
+                                    {
+                                        <img src="@item.Product.ImageUrl" class="img-fluid rounded" alt="@item.Product.Name">
+                                    }
+                                    else
+                                    {
+                                        <div class="bg-light d-flex align-items-center justify-content-center rounded" style="height: 80px;">
+                                            <span class="text-muted small">Resim Yok</span>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="mb-1">@item.Product?.Name</h6>
+                                    <p class="text-muted mb-1">Beden: @item.SelectedSize</p>
+                                    <p class="text-muted mb-0">Birim Fiyat: ₺@item.Product?.Price.ToString("N2")</p>
+                                </div>
+                                <div class="col-md-2 text-center">
+                                    <span class="badge bg-secondary">@item.Quantity adet</span>
+                                </div>
+                                <div class="col-md-2 text-end">
+                                    <strong>₺@((item.Quantity * (item.Product?.Price ?? 0)).ToString("N2"))</strong>
+                                </div>
+                            </div>
+                        }
+                        
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-8 text-end">
+                                <strong>Toplam Tutar:</strong>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <strong class="fs-4 text-success">₺@Model.TotalAmount.ToString("N2")</strong>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const codeInput = document.getElementById('EnteredCode');
+    
+    // Sadece sayı girişine izin ver
+    codeInput.addEventListener('input', function(e) {
+        this.value = this.value.replace(/[^0-9]/g, '');
+    });
+    
+    // 6 karakterden sonra otomatik submit
+    codeInput.addEventListener('keyup', function(e) {
+        if (this.value.length === 6) {
+            this.form.submit();
+        }
+    });
+});
+
+function copyCode() {
+    const code = document.getElementById('verificationCode').textContent;
+    navigator.clipboard.writeText(code).then(function() {
+        // Başarılı kopyalama için daha iyi bir bildirim
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check me-1"></i>Kopyalandı!';
+        button.classList.remove('btn-outline-primary');
+        button.classList.add('btn-success');
+        
+        setTimeout(function() {
+            button.innerHTML = originalText;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-primary');
+        }, 2000);
+    }).catch(function(err) {
+        console.error('Onay kodu kopyalanamadı:', err);
+        alert('Onay kodu kopyalanamadı. Lütfen manuel olarak kopyalayın.');
+    });
+}
+</script> 

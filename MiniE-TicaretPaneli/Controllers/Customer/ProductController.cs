@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MiniE_TicaretPaneli.Controllers.Customer
 {
-    [Route("Customer/[controller]/[action]")]
+    [Route("Customer/[controller]")]
     public class ProductController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -19,6 +19,8 @@ namespace MiniE_TicaretPaneli.Controllers.Customer
         }
 
         // Products Action
+        [Route("Products")]
+        [Route("")]
         public async Task<IActionResult> Products(string? gender = null, string? searchTerm = null, int? mainCategoryId = null, int? subCategoryId = null, string? brand = null)
         {
             var query = _context.Products
@@ -75,7 +77,7 @@ namespace MiniE_TicaretPaneli.Controllers.Customer
         }
 
         // ProductDetail Action
-        [Route("{id:int}")]
+        [Route("ProductDetail/{id:int}")]
         public async Task<IActionResult> ProductDetail(int? id)
         {
             if (id == null)
@@ -91,6 +93,7 @@ namespace MiniE_TicaretPaneli.Controllers.Customer
 
         // GetSubCategories Action
         [HttpGet]
+        [Route("GetSubCategories")]
         public async Task<IActionResult> GetSubCategories(int mainCategoryId)
         {
             var subCategories = await _context.Categories
@@ -102,5 +105,4 @@ namespace MiniE_TicaretPaneli.Controllers.Customer
             return Json(subCategories);
         }
     }
-
 }

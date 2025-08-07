@@ -14,5 +14,7 @@ namespace MiniE_TicaretPaneli.Models
 
         public int Quantity { get; set; }
         public float UnitPrice { get; set; }
+        public float Price { get; set; } // Ürün fiyatı
+        public string? SelectedSize { get; set; } // Seçilen beden
     }
 }

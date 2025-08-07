@@ -3,13 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using MiniE_TicaretPaneli.Data;
 using MiniE_TicaretPaneli.Models;
 using MiniE_TicaretPaneli.Models.ViewModels;
-using System.Threading.Tasks;
-using System.Linq;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using System.IO;
+
 
 namespace MiniE_TicaretPaneli.Controllers.Admin
 {
@@ -38,8 +33,6 @@ namespace MiniE_TicaretPaneli.Controllers.Admin
         .ToList();
 
             ViewBag.MainCategories = mainCategories;
-
-            return View();
 
             return View(products);
         }

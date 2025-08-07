@@ -15,7 +15,6 @@ namespace MiniE_TicaretPaneli.Models
         public string CardHolderName { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Kart numarası zorunludur.")]
-        [StringLength(4, MinimumLength = 4, ErrorMessage = "Kart numarasının son 4 hanesini giriniz.")]
         public string CardNumberLastFour { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Son kullanma ayı zorunludur.")]

@@ -8,7 +8,8 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Security.Claims;
 using Microsoft.Extensions.Caching.Memory;
-using System.Collections.Generic; // Added for List<ShoppingCart>
+using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace MiniE_TicaretPaneli.Controllers.Customer
 {
@@ -18,11 +19,32 @@ namespace MiniE_TicaretPaneli.Controllers.Customer
     {
         private readonly ApplicationDbContext _context;
         private readonly IMemoryCache _memoryCache;
+
         public CustomerOrderController(ApplicationDbContext context, IMemoryCache memoryCache)
         {
             _context = context;
             _memoryCache = memoryCache;
         }
+
+        // Session'dan sepet verilerini al
+        private List<ShoppingCart> GetCartFromSession()
+        {
+            var cartJson = HttpContext.Session.GetString("UserCart");
+            if (string.IsNullOrEmpty(cartJson))
+            {
+                return new List<ShoppingCart>();
+            }
+            return JsonConvert.DeserializeObject<List<ShoppingCart>>(cartJson) ?? new List<ShoppingCart>();
+        }
+
+        // Cache'den sepet verilerini al (backup olarak)
+        private List<ShoppingCart> GetCartFromCache(int userId)
+        {
+            var cacheKey = $"cart_{userId}";
+            var cachedCart = _memoryCache.Get<List<ShoppingCart>>(cacheKey);
+            return cachedCart ?? new List<ShoppingCart>();
+        }
+
         // Orders
         public async Task<IActionResult> Orders()
         {
@@ -46,6 +68,7 @@ namespace MiniE_TicaretPaneli.Controllers.Customer
                                        .ToListAsync();
             return View("~/Views/Customer/Order/Orders.cshtml", orders);
         }
+
         // CancelOrder
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -67,8 +90,8 @@ namespace MiniE_TicaretPaneli.Controllers.Customer
             TempData["SuccessMessage"] = "Sipariş başarıyla iptal edildi.";
             return RedirectToAction("Orders");
         }
-        // Checkout
 
+        // Checkout
         [HttpGet]
         [AllowAnonymous]
         public async Task<IActionResult> Checkout()
@@ -85,39 +108,42 @@ namespace MiniE_TicaretPaneli.Controllers.Customer
                 TempData["ErrorMessage"] = "Kullanıcı bilgisi alınamadı. Lütfen tekrar giriş yapın.";
                 return RedirectToAction("Login", "Account");
             }
-            // Cache'den sepet verilerini al
-            var cartCached = await _memoryCache.GetOrCreateAsync<List<ShoppingCart>>("cartList", cacheEntry =>
+
+            // Önce session'dan sepet verilerini al
+            var cartItems = GetCartFromSession();
+
+            // Eğer session'da veri yoksa, cache'den al
+            if (!cartItems.Any())
             {
-                cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30);
-                return Task.FromResult(new List<ShoppingCart>());
-            });
-            
-            if (cartCached == null)
-            {
-                cartCached = new List<ShoppingCart>();
+                cartItems = GetCartFromCache(userId);
             }
-            
+
             // Kullanıcının sepetini filtrele
-            var cartItems = cartCached.Where(ci => ci.UserId == userId).ToList();
-            
-            // Her item'ın Product'ını doldur
-            foreach (var item in cartItems)
+            var userCartItems = cartItems.Where(ci => ci.UserId == userId).ToList();
+
+            if (!userCartItems.Any())
+            {
+                TempData["ErrorMessage"] = "Sepetinizde ürün bulunmamaktadır.";
+                return RedirectToAction("Cart", "Cart");
+            }
+
+            // Product bilgilerini yükle
+            foreach (var item in userCartItems)
             {
                 if (item.Product == null)
                 {
                     item.Product = await _context.Products.FindAsync(item.ProductId);
                 }
             }
-            
-            if (!cartItems.Any())
-            {
-                TempData["ErrorMessage"] = "Sepetiniz boş. Ödeme yapmadan önce ürün ekleyin.";
-                return RedirectToAction("Cart", "Cart");
-            }
-            ViewBag.CartItems = cartItems;
-            ViewBag.TotalAmount = cartItems.Sum(ci => ci.Product.Price * ci.Quantity);
-            ViewBag.CreditCards = await _context.CreditCards.Where(c => c.UserId == userId).ToListAsync();
-            ViewBag.Addresses = await _context.Addresses.Where(a => a.UserId == userId).ToListAsync();
+
+            // Kullanıcının adreslerini ve kartlarını al
+            var addresses = await _context.Addresses.Where(a => a.UserId == userId).ToListAsync();
+            var creditCards = await _context.CreditCards.Where(c => c.UserId == userId).ToListAsync();
+
+            ViewBag.Addresses = addresses;
+            ViewBag.CreditCards = creditCards;
+            ViewBag.CartItems = userCartItems;
+
             return View("~/Views/Customer/Order/Checkout.cshtml");
         }
         // ProcessPayment
@@ -152,31 +178,29 @@ namespace MiniE_TicaretPaneli.Controllers.Customer
                 TempData["ErrorMessage"] = "Kullanıcı bilgisi alınamadı. Lütfen tekrar giriş yapın.";
                 return RedirectToAction("Login", "Account");
             }
-            // Cache'den sepet verilerini al
-            var cartCached = await _memoryCache.GetOrCreateAsync<List<ShoppingCart>>("cartList", cacheEntry =>
+
+            // Önce session'dan sepet verilerini al
+            var cartItems = GetCartFromSession();
+
+            // Eğer session'da veri yoksa, cache'den al
+            if (!cartItems.Any())
             {
-                cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30);
-                return Task.FromResult(new List<ShoppingCart>());
-            });
-            
-            if (cartCached == null)
-            {
-                cartCached = new List<ShoppingCart>();
+                cartItems = GetCartFromCache(userId);
             }
-            
+
             // Kullanıcının sepetini filtrele
-            var cartItems = cartCached.Where(ci => ci.UserId == userId).ToList();
-            
-            // Her item'ın Product'ını doldur
-            foreach (var item in cartItems)
+            var userCartItems = cartItems.Where(ci => ci.UserId == userId).ToList();
+
+            // Product bilgilerini yükle
+            foreach (var item in userCartItems)
             {
                 if (item.Product == null)
                 {
                     item.Product = await _context.Products.FindAsync(item.ProductId);
                 }
             }
-            
-            if (!cartItems.Any())
+
+            if (!userCartItems.Any())
             {
                 TempData["ErrorMessage"] = "Sepetiniz boş.";
                 return RedirectToAction("Cart", "Cart");
@@ -235,38 +259,54 @@ namespace MiniE_TicaretPaneli.Controllers.Customer
                 {
                     UserId = userId,
                     OrderDate = DateTime.UtcNow,
-                    TotalAmount = cartItems.Sum(ci => (float)ci.Product.Price * ci.Quantity),
+                    TotalAmount = userCartItems.Sum(ci => (float)ci.Product.Price * ci.Quantity),
                     Status = "Processing"
-                    // İstersen AddressId ve CreditCardId ekleyebilirsin
                 };
                 _context.Orders.Add(order);
                 await _context.SaveChangesAsync();
-                foreach (var item in cartItems)
+
+                foreach (var item in userCartItems)
                 {
                     var orderItem = new OrderItem
                     {
                         OrderId = order.Id,
                         ProductId = item.ProductId,
                         Quantity = item.Quantity,
-                        UnitPrice = item.Product.Price
+                        UnitPrice = item.Product.Price,
+                        Price = item.Product.Price,
+                        SelectedSize = item.SelectedSize
                     };
                     _context.OrderItems.Add(orderItem);
-                    item.Product.Stock -= item.Quantity;
+
+                    // Stok güncelle
+                    var product = await _context.Products.FindAsync(item.ProductId);
+                    if (product != null)
+                    {
+                        product.Stock -= item.Quantity;
+                        _context.Products.Update(product);
+                    }
                 }
-                // Cache'den kullanıcının sepetini temizle
-                var updatedCartCached = cartCached.Where(ci => ci.UserId != userId).ToList();
-                _memoryCache.Set("cartList", updatedCartCached);
+
+                await _context.SaveChangesAsync();
+
+                // Kullanıcının sepetini temizle
+                var updatedCartItems = cartItems.Where(ci => ci.UserId != userId).ToList();
                 
+                // Session'ı güncelle
+                var cartJson = JsonConvert.SerializeObject(updatedCartItems);
+                HttpContext.Session.SetString("UserCart", cartJson);
+
+                // Cache'i de güncelle
+                var cacheKey = $"cart_{userId}";
+                _memoryCache.Set(cacheKey, updatedCartItems, TimeSpan.FromHours(2));
+
                 TempData["SuccessMessage"] = paymentMessage + " Siparişiniz başarıyla oluşturuldu.";
                 return RedirectToAction("Cart", "Cart");
             }
             else
             {
-                TempData["ErrorMessage"] = "Ödeme başarısız oldu. Lütfen bilgilerinizi kontrol edin.";
-                ViewBag.CartItems = cartItems;
-                ViewBag.TotalAmount = cartItems.Sum(ci => ci.Product.Price * ci.Quantity);
-                ViewBag.CreditCards = await _context.CreditCards.Where(c => c.UserId == userId).ToListAsync();
-                return View("~/Views/Customer/Order/Checkout.cshtml");
+                TempData["ErrorMessage"] = "Ödeme işlemi başarısız oldu. Lütfen tekrar deneyin.";
+                return RedirectToAction("Checkout");
             }
         }
     }

@@ -38,17 +38,26 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var item in Model) // <<<<< DÖNGÜ BAŞLIYOR: Buradan itibaren 'item' kullanmalısınız
+            @foreach (var item in Model)
             {
                 <tr>
                     <td>
-                        <img src="@item.ImageUrl" alt="@item.Name" style="width: 80px; height: 80px; object-fit: cover; border-radius: 5px;" />
+                        @if (!string.IsNullOrEmpty(item.ImageUrl))
+                        {
+                            <img src="@item.ImageUrl" alt="@item.Name" style="width: 80px; height: 80px; object-fit: cover; border-radius: 5px;" />
+                        }
+                        else
+                        {
+                            <div class="bg-light d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; border-radius: 5px;">
+                                <i class="fas fa-image text-muted"></i>
+                            </div>
+                        }
                     </td>
                     <td>@Html.DisplayFor(modelItem => item.Name)</td>
                     <td>@item.Price.ToString("C2")</td>
                     <td>@Html.DisplayFor(modelItem => item.Stock)</td>
-                    <td>@Html.DisplayFor(modelItem => item.MainCategory!.Name)</td>
-                    <td>@Html.DisplayFor(modelItem => item.SubCategory!.Name)</td>
+                    <td>@(item.MainCategory?.Name ?? "Kategori Yok")</td>
+                    <td>@(item.SubCategory?.Name ?? "Kategori Yok")</td>
                     <td>@Html.DisplayFor(modelItem => item.Gender)</td>
                     <td>@Html.DisplayFor(modelItem => item.Brand)</td>
                     <td>@Html.DisplayFor(modelItem => item.AvailableSizes)</td>
