@@ -4,6 +4,7 @@ using MiniE_TicaretPaneli.Models;
 using MiniE_TicaretPaneli.Models.ViewModels;
 using MiniE_TicaretPaneli.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MiniE_TicaretPaneli.Controllers
 {
@@ -27,6 +28,13 @@ namespace MiniE_TicaretPaneli.Controllers
                 .Take(8)
                 .ToListAsync();
             return View(featuredProducts);
+        }
+
+        // Admin Dashboard için
+        [Authorize(Roles = "Admin")]
+        public IActionResult AdminDashboard()
+        {
+            return View("~/Views/Admin/Dashboard/Index.cshtml");
         }
 
         public IActionResult Privacy()

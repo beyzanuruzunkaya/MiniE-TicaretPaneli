@@ -2,19 +2,33 @@
 @model MiniE_TicaretPaneli.Models.Product
 
 @{
-    ViewData["Title"] = "Ürün Sil";
+    ViewData["Title"] = "Ürünü Pasif Yap";
 }
 
-<h1 class="mb-4 text-danger">Ürünü Sil</h1>
+<h1 class="mb-4 text-warning">Ürünü Pasif Yap</h1>
 
-<h3>Bu ürünü silmek istediğinizden emin misiniz?</h3>
+<h3>Bu ürünü pasif hale getirmek istediğinizden emin misiniz?</h3>
+<div class="alert alert-warning" role="alert">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    <strong>Dikkat:</strong> Bu işlem ürünü tamamen silmez, sadece pasif hale getirir. 
+    Ürün sipariş geçmişinde görünmeye devam edecek ancak yeni siparişlerde görünmeyecek ve sepetlerden otomatik olarak kaldırılacaktır.
+</div>
 <div class="card shadow-sm p-4">
     <dl class="row">
         <dt class="col-sm-3">
             Görsel
         </dt>
         <dd class="col-sm-9">
-            <img src="@Model.ImageUrl" alt="@Model.Name" style="width: 150px; height: 150px; object-fit: cover; border-radius: 5px;" />
+            @if (!string.IsNullOrEmpty(Model.ImageUrl))
+            {
+                <img src="@Model.ImageUrl" alt="@Model.Name" style="width: 150px; height: 150px; object-fit: cover; border-radius: 5px;" />
+            }
+            else
+            {
+                <div class="bg-light d-flex align-items-center justify-content-center" style="width: 150px; height: 150px; border-radius: 5px;">
+                    <i class="fas fa-image text-muted"></i>
+                </div>
+            }
         </dd>
         <dt class="col-sm-3">
             @Html.DisplayNameFor(model => model.Name)
@@ -38,13 +52,13 @@
             Ana Kategori
         </dt>
         <dd class="col-sm-9">
-            @Html.DisplayFor(model => model.MainCategory!.Name)
+            @(Model.MainCategory?.Name ?? "Kategori Yok")
         </dd>
         <dt class="col-sm-3">
             Alt Kategori
         </dt>
         <dd class="col-sm-9">
-            @Html.DisplayFor(model => model.SubCategory!.Name)
+            @(Model.SubCategory?.Name ?? "Kategori Yok")
         </dd>
         <dt class="col-sm-3">
             @Html.DisplayNameFor(model => model.Gender)
@@ -59,7 +73,7 @@
         <input type="hidden" asp-for="Id" />
         <div class="d-flex justify-content-between mt-3">
             <a asp-controller="Product" asp-action="Products" class="btn btn-secondary">Listeye Geri Dön</a>
-            <button type="submit" class="btn btn-danger"><i class="fas fa-trash-alt me-2"></i>Sil</button>
+            <button type="submit" class="btn btn-warning"><i class="fas fa-ban me-2"></i>Pasif Yap</button>
         </div>
     </form>
 </div>

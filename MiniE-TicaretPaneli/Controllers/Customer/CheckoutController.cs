@@ -26,11 +26,24 @@ namespace MiniE_TicaretPaneli.Controllers.Customer
         // Database'den sepet verilerini al
         private async Task<List<ShoppingCart>> GetCartFromDatabase(int userId)
         {
-            return await _context.CartItems
+            var cartItems = await _context.CartItems
                 .Include(c => c.Product)
                 .Where(c => c.UserId == userId)
                 .OrderByDescending(c => c.UpdatedAt)
                 .ToListAsync();
+
+            // Pasif ürünleri sepetten kaldır
+            var inactiveItems = cartItems.Where(ci => ci.Product != null && !ci.Product.IsActive).ToList();
+            if (inactiveItems.Any())
+            {
+                _context.CartItems.RemoveRange(inactiveItems);
+                await _context.SaveChangesAsync();
+                
+                // Pasif ürünleri listeden çıkar
+                cartItems = cartItems.Where(ci => ci.Product == null || ci.Product.IsActive).ToList();
+            }
+
+            return cartItems;
         }
 
         [HttpGet]

@@ -26,7 +26,15 @@ namespace MiniE_TicaretPaneli.Controllers.Admin
             var products = await _context.Products
                                        .Include(p => p.MainCategory)
                                        .Include(p => p.SubCategory)
+                                       .OrderByDescending(p => p.IsActive) // Önce aktif ürünler, sonra pasif ürünler
+                                       .ThenBy(p => p.Name)
                                        .ToListAsync();
+
+            // Debug: ImageUrl değerlerini kontrol et
+            foreach (var product in products)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DEBUG] Product: {product.Name}, ImageUrl: {product.ImageUrl ?? "NULL"}");
+            }
 
             var mainCategories = _context.Categories
         .Where(c => c.ParentCategoryId == null)
@@ -195,16 +203,54 @@ namespace MiniE_TicaretPaneli.Controllers.Admin
             var product = await _context.Products.FindAsync(id);
             if (product != null)
             {
-                if (!string.IsNullOrEmpty(product.ImageUrl) && !product.ImageUrl.Contains("default-product.jpg"))
+                // Ürünü silmek yerine pasif hale getir
+                product.IsActive = false;
+                _context.Products.Update(product);
+
+                // Bu ürünü sepetlerden kaldır
+                var cartItemsToRemove = await _context.CartItems
+                    .Where(ci => ci.ProductId == id)
+                    .ToListAsync();
+
+                if (cartItemsToRemove.Any())
                 {
-                    var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", product.ImageUrl.TrimStart('/'));
-                    if (System.IO.File.Exists(filePath)) { System.IO.File.Delete(filePath); }
+                    _context.CartItems.RemoveRange(cartItemsToRemove);
                 }
-                _context.Products.Remove(product);
+
                 await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Ürün başarıyla silindi!";
+                TempData["SuccessMessage"] = "Ürün başarıyla pasif hale getirildi ve sepetlerden kaldırıldı!";
             }
             return RedirectToAction(nameof(Products));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ActivateProduct(int id)
+        {
+            var product = await _context.Products.FindAsync(id);
+            if (product != null)
+            {
+                // Ürünü aktif hale getir
+                product.IsActive = true;
+                _context.Products.Update(product);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Ürün başarıyla aktif hale getirildi!";
+            }
+            return RedirectToAction(nameof(Products));
+        }
+
+        // Geçici test action'ı - ürünlerin ImageUrl değerlerini kontrol etmek için
+        [HttpGet]
+        public async Task<IActionResult> TestImages()
+        {
+            var products = await _context.Products.ToListAsync();
+            var imageInfo = products.Select(p => new { 
+                p.Id, 
+                p.Name, 
+                ImageUrl = p.ImageUrl ?? "NULL",
+                IsActive = p.IsActive
+            }).ToList();
+            return Json(imageInfo);
         }
 
         private bool ProductExists(int id)

@@ -89,6 +89,22 @@
                     <input asp-for="Product.Pattern" class="form-control" />
                     <span asp-validation-for="Product.Pattern" class="text-danger"></span>
                 </div>
+                <div class="mb-3">
+                    <label class="form-label">Mevcut Görsel</label><br />
+                    @if (!string.IsNullOrEmpty(Model.ExistingImageUrl))
+                    {
+                        <img src="@Model.ExistingImageUrl" alt="Ürün Görseli" style="width:120px; height:120px; object-fit:cover; border-radius:5px;" />
+                    }
+                    else
+                    {
+                        <span class="text-muted">Görsel yok</span>
+                    }
+                </div>
+                <div class="mb-3">
+                    <label asp-for="ProductImage" class="form-label">Yeni Görsel Yükle</label>
+                    <input asp-for="ProductImage" type="file" class="form-control" accept="image/*" />
+                    <span asp-validation-for="ProductImage" class="text-danger"></span>
+                </div>
             </div>
         </div>
 

@@ -55,7 +55,14 @@
                                     <i class="fas fa-user"></i> Merhaba, @User.Identity.Name!
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="navbarDropdownUser">
-                                    <li><a class="dropdown-item" asp-controller="Dashboard" asp-action="CustomerDashboard">Hesabım</a></li>
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <li><a class="dropdown-item" asp-controller="Home" asp-action="AdminDashboard">Hesabım</a></li>
+                                    }
+                                    else
+                                    {
+                                        <li><a class="dropdown-item" asp-controller="Dashboard" asp-action="CustomerDashboard">Hesabım</a></li>
+                                    }
                                     @if (User.IsInRole("Customer"))
                                     {
                                         <li><a class="dropdown-item" asp-controller="CustomerOrder" asp-action="Orders">Siparişlerim</a></li>

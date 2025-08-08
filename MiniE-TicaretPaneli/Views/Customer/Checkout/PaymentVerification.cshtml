@@ -116,41 +116,36 @@
     </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const codeInput = document.getElementById('EnteredCode');
-    
-    // Sadece sayı girişine izin ver
-    codeInput.addEventListener('input', function(e) {
-        this.value = this.value.replace(/[^0-9]/g, '');
-    });
-    
-    // 6 karakterden sonra otomatik submit
-    codeInput.addEventListener('keyup', function(e) {
-        if (this.value.length === 6) {
-            this.form.submit();
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+    function copyCode() {
+        const code = document.getElementById('verificationCode').textContent;
+        const button = event.target.closest('button');
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(code).then(function() {
+                Swal.fire('Kopyalandı!', 'Kod panoya kopyalandı.', 'success');
+            }, function() {
+                Swal.fire('Hata!', 'Kod panoya kopyalanamadı.', 'error');
+            });
+        } else {
+            // Fallback (eski tarayıcılar için)
+            var textarea = document.createElement('textarea');
+            textarea.value = code;
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                var successful = document.execCommand('copy');
+                if (successful) {
+                    Swal.fire('Kopyalandı!', 'Kod panoya kopyalandı.', 'success');
+                } else {
+                    Swal.fire('Hata!', 'Kod panoya kopyalanamadı.', 'error');
+                }
+            } catch (err) {
+                Swal.fire('Hata!', 'Kod panoya kopyalanamadı.', 'error');
+            }
+            document.body.removeChild(textarea);
         }
-    });
-});
-
-function copyCode() {
-    const code = document.getElementById('verificationCode').textContent;
-    navigator.clipboard.writeText(code).then(function() {
-        // Başarılı kopyalama için daha iyi bir bildirim
-        const button = event.target;
-        const originalText = button.innerHTML;
-        button.innerHTML = '<i class="fas fa-check me-1"></i>Kopyalandı!';
-        button.classList.remove('btn-outline-primary');
-        button.classList.add('btn-success');
-        
-        setTimeout(function() {
-            button.innerHTML = originalText;
-            button.classList.remove('btn-success');
-            button.classList.add('btn-outline-primary');
-        }, 2000);
-    }).catch(function(err) {
-        console.error('Onay kodu kopyalanamadı:', err);
-        alert('Onay kodu kopyalanamadı. Lütfen manuel olarak kopyalayın.');
-    });
-}
-</script> 
+    }
+    </script>
+} 

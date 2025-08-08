@@ -3,7 +3,152 @@
     ViewData["Title"] = "Sepetim";
 }
 
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Sepetten ürün silme onayı
+        document.querySelectorAll('.remove-from-cart-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const form = btn.closest('form');
+                const itemName = btn.getAttribute('data-item-name') || 'Bu ürünü';
+                Swal.fire({
+                    title: 'Emin misiniz?',
+                    text: itemName + ' sepetten kaldırılsın mı?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Evet, kaldır!',
+                    cancelButtonText: 'Vazgeç'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            });
+        });
+
+        // Sepeti temizleme onayı
+        document.querySelectorAll('.clear-cart-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const form = btn.closest('form');
+                Swal.fire({
+                    title: 'Emin misiniz?',
+                    text: 'Sepetinizdeki tüm ürünler silinecek. Bu işlem geri alınamaz!',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Evet, temizle!',
+                    cancelButtonText: 'Vazgeç'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            });
+        });
+    });
+
+    // Miktar güncelleme fonksiyonu
+    function updateQuantity(cartItemId, change) {
+        const quantityInput = document.getElementById('quantity-' + cartItemId);
+        let currentQuantity = parseInt(quantityInput.value);
+        let newQuantity = currentQuantity + change;
+        
+        // Minimum 1 olmalı
+        if (newQuantity < 1) {
+            newQuantity = 1;
+        }
+        
+        // Stok kontrolü
+        const maxStock = parseInt(quantityInput.getAttribute('max'));
+        if (newQuantity > maxStock) {
+            Swal.fire({
+                title: 'Stok Yetersiz!',
+                text: 'Bu ürün için yeterli stok bulunmamaktadır.',
+                icon: 'warning',
+                confirmButtonText: 'Tamam'
+            });
+            return;
+        }
+        
+        // AJAX ile güncelleme
+        const formData = new FormData();
+        formData.append('cartItemId', cartItemId);
+        formData.append('newQuantity', newQuantity);
+        formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
+        
+        fetch('/Customer/Cart/UpdateCartItem', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (response.ok) {
+                // Sayfayı yenile
+                window.location.reload();
+            } else {
+                Swal.fire({
+                    title: 'Hata!',
+                    text: 'Miktar güncellenirken bir hata oluştu.',
+                    icon: 'error',
+                    confirmButtonText: 'Tamam'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                title: 'Hata!',
+                text: 'Miktar güncellenirken bir hata oluştu.',
+                icon: 'error',
+                confirmButtonText: 'Tamam'
+            });
+        });
+    }
+
+    // Beden güncelleme fonksiyonu
+    function updateSize(cartItemId, newSize) {
+        const formData = new FormData();
+        formData.append('cartItemId', cartItemId);
+        formData.append('newSize', newSize);
+        formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
+        
+        fetch('/Customer/Cart/UpdateCartItemSize', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (response.ok) {
+                // Sayfayı yenile
+                window.location.reload();
+            } else {
+                Swal.fire({
+                    title: 'Hata!',
+                    text: 'Beden güncellenirken bir hata oluştu.',
+                    icon: 'error',
+                    confirmButtonText: 'Tamam'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                title: 'Hata!',
+                text: 'Beden güncellenirken bir hata oluştu.',
+                icon: 'error',
+                confirmButtonText: 'Tamam'
+            });
+        });
+    }
+    </script>
+}
+
 <div class="container mt-4">
+    @Html.AntiForgeryToken()
     <h2 class="text-center mb-4">Sepetim</h2>
 
     @if (TempData["SuccessMessage"] != null)
@@ -119,7 +264,7 @@
                                                     <form asp-action="RemoveFromCart" method="post" style="display: inline;">
                                                         @Html.AntiForgeryToken()
                                                         <input type="hidden" name="cartItemId" value="@item.Id" />
-                                                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Bu ürünü sepetten kaldırmak istediğinizden emin misiniz?')">
+                                                        <button type="button" class="btn btn-danger btn-sm remove-from-cart-btn" data-item-name="@item.Product?.Name">
                                                             <i class="fas fa-trash"></i> Kaldır
                                                         </button>
                                                     </form>
@@ -170,7 +315,7 @@
                                 
                                 <form asp-action="ClearCart" method="post">
                                     @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Sepeti tamamen temizlemek istediğinizden emin misiniz?')">
+                                    <button type="button" class="btn btn-outline-danger clear-cart-btn">
                                         <i class="fas fa-trash"></i> Sepeti Temizle
                                     </button>
                                 </form>
@@ -203,88 +348,3 @@
         transition: box-shadow 0.3s ease;
     }
 </style>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Ürün linklerine tıklama animasyonu
-    const productLinks = document.querySelectorAll('.product-link, .product-image-link');
-    productLinks.forEach(link => {
-        link.addEventListener('click', function() {
-            this.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                this.style.transform = '';
-            }, 200);
-        });
-    });
-});
-
-function updateQuantity(cartItemId, change) {
-    const input = document.getElementById(`quantity-${cartItemId}`);
-    const currentValue = parseInt(input.value);
-    const newValue = currentValue + change;
-    
-    if (newValue >= 1) {
-        // Form oluştur ve gönder
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '/Customer/Cart/UpdateCartItem';
-        
-        // CSRF token ekle
-        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-        const tokenInput = document.createElement('input');
-        tokenInput.type = 'hidden';
-        tokenInput.name = '__RequestVerificationToken';
-        tokenInput.value = token;
-        form.appendChild(tokenInput);
-        
-        // Cart item ID ekle
-        const cartItemInput = document.createElement('input');
-        cartItemInput.type = 'hidden';
-        cartItemInput.name = 'cartItemId';
-        cartItemInput.value = cartItemId;
-        form.appendChild(cartItemInput);
-        
-        // Quantity ekle
-        const quantityInput = document.createElement('input');
-        quantityInput.type = 'hidden';
-        quantityInput.name = 'newQuantity';
-        quantityInput.value = newValue;
-        form.appendChild(quantityInput);
-        
-        document.body.appendChild(form);
-        form.submit();
-    }
-}
-
-function updateSize(cartItemId, newSize) {
-    // Form oluştur ve gönder
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = '/Customer/Cart/UpdateCartItemSize';
-    
-    // CSRF token ekle
-    const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-    const tokenInput = document.createElement('input');
-    tokenInput.type = 'hidden';
-    tokenInput.name = '__RequestVerificationToken';
-    tokenInput.value = token;
-    form.appendChild(tokenInput);
-    
-    // Cart item ID ekle
-    const cartItemInput = document.createElement('input');
-    cartItemInput.type = 'hidden';
-    cartItemInput.name = 'cartItemId';
-    cartItemInput.value = cartItemId;
-    form.appendChild(cartItemInput);
-    
-    // Size ekle
-    const sizeInput = document.createElement('input');
-    sizeInput.type = 'hidden';
-    sizeInput.name = 'newSize';
-    sizeInput.value = newSize;
-    form.appendChild(sizeInput);
-    
-    document.body.appendChild(form);
-    form.submit();
-}
-</script>

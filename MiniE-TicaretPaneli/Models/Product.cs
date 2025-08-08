@@ -53,5 +53,8 @@ namespace MiniE_TicaretPaneli.Models
 
         [StringLength(100, ErrorMessage = "Desen en fazla 100 karakter olmalıdır.")]
         public string? Pattern { get; set; }
+
+        // Ürünün aktif olup olmadığını belirten özellik
+        public bool IsActive { get; set; } = true;
     }
 }

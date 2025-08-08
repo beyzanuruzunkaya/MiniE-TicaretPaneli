@@ -34,17 +34,23 @@
                 <th>Marka</th>
                 <th>Bedenler</th>
                 <th>Renkler</th>
+                <th>Durum</th>
                 <th>İşlemler</th>
             </tr>
         </thead>
         <tbody>
             @foreach (var item in Model)
             {
-                <tr>
+                <tr class="@(item.IsActive ? "" : "table-secondary")">
                     <td>
                         @if (!string.IsNullOrEmpty(item.ImageUrl))
                         {
-                            <img src="@item.ImageUrl" alt="@item.Name" style="width: 80px; height: 80px; object-fit: cover; border-radius: 5px;" />
+                            var imagePath = item.ImageUrl.StartsWith("/") ? item.ImageUrl : "/" + item.ImageUrl;
+                            <img src="@imagePath" alt="@item.Name" style="width: 80px; height: 80px; object-fit: cover; border-radius: 5px;" 
+                                 onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                            <div class="bg-light d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; border-radius: 5px; display: none;">
+                                <i class="fas fa-image text-muted"></i>
+                            </div>
                         }
                         else
                         {
@@ -63,8 +69,31 @@
                     <td>@Html.DisplayFor(modelItem => item.AvailableSizes)</td>
                     <td>@Html.DisplayFor(modelItem => item.AvailableColors)</td>
                     <td>
+                        @if (item.IsActive)
+                        {
+                            <span class="badge bg-success">Aktif</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Pasif</span>
+                        }
+                    </td>
+                    <td>
                         <a asp-controller="Product" asp-action="EditProduct" asp-route-id="@item.Id" class="btn btn-sm btn-warning mb-1"><i class="fas fa-edit"></i> Düzenle</a>
-                        <a asp-controller="Product" asp-action="DeleteProduct" asp-route-id="@item.Id" class="btn btn-sm btn-danger mb-1"><i class="fas fa-trash-alt"></i> Sil</a>
+                        @if (item.IsActive)
+                        {
+                            <a asp-controller="Product" asp-action="DeleteProduct" asp-route-id="@item.Id" class="btn btn-sm btn-danger mb-1"><i class="fas fa-trash-alt"></i> Pasif Yap</a>
+                        }
+                        else
+                        {
+                            <form asp-controller="Product" asp-action="ActivateProduct" method="post" style="display: inline;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@item.Id" />
+                                <button type="submit" class="btn btn-sm btn-success mb-1" onclick="return confirm('Bu ürünü aktif hale getirmek istediğinizden emin misiniz?')">
+                                    <i class="fas fa-check"></i> Aktif Yap
+                                </button>
+                            </form>
+                        }
                     </td>
                 </tr>
             }

@@ -27,11 +27,24 @@ namespace MiniE_TicaretPaneli.Controllers.Customer
         // Database'den sepet verilerini al
         private async Task<List<ShoppingCart>> GetCartFromDatabase(int userId)
         {
-            return await _context.CartItems
+            var cartItems = await _context.CartItems
                 .Include(c => c.Product)
                 .Where(c => c.UserId == userId)
                 .OrderByDescending(c => c.UpdatedAt)
                 .ToListAsync();
+
+            // Pasif ürünleri sepetten kaldır
+            var inactiveItems = cartItems.Where(ci => ci.Product != null && !ci.Product.IsActive).ToList();
+            if (inactiveItems.Any())
+            {
+                _context.CartItems.RemoveRange(inactiveItems);
+                await _context.SaveChangesAsync();
+                
+                // Pasif ürünleri listeden çıkar
+                cartItems = cartItems.Where(ci => ci.Product == null || ci.Product.IsActive).ToList();
+            }
+
+            return cartItems;
         }
 
         [HttpGet]
@@ -54,8 +67,14 @@ namespace MiniE_TicaretPaneli.Controllers.Customer
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddToCart(int productId, string selectedSize, int quantity = 1)
+        public async Task<IActionResult> AddToCart(int? productId, string? selectedSize, int quantity = 1)
         {
+            if (productId == null || string.IsNullOrEmpty(selectedSize))
+            {
+                TempData["ErrorMessage"] = "Lütfen ürün ve beden seçimini kontrol edin.";
+                return RedirectToAction("Products", "Product");
+            }
+
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
             if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
             {
@@ -63,16 +82,17 @@ namespace MiniE_TicaretPaneli.Controllers.Customer
                 return RedirectToAction("Login", "Account");
             }
 
-            if (string.IsNullOrEmpty(selectedSize))
-            {
-                TempData["ErrorMessage"] = "Lütfen bir beden seçiniz.";
-                return RedirectToAction("ProductDetail", "Product", new { id = productId });
-            }
-
             var product = await _context.Products.FindAsync(productId);
             if (product == null)
             {
                 TempData["ErrorMessage"] = "Ürün bulunamadı.";
+                return RedirectToAction("Products", "Product");
+            }
+
+            // Ürün aktif mi kontrol et
+            if (!product.IsActive)
+            {
+                TempData["ErrorMessage"] = "Bu ürün artık satışta değil.";
                 return RedirectToAction("Products", "Product");
             }
 
@@ -116,7 +136,7 @@ namespace MiniE_TicaretPaneli.Controllers.Customer
                 var cartItem = new ShoppingCart
                 {
                     UserId = userId,
-                    ProductId = productId,
+                    ProductId = productId.Value,
                     Quantity = quantity,
                     SelectedSize = selectedSize,
                     CreatedAt = DateTime.Now,

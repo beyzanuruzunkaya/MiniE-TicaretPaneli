@@ -26,6 +26,7 @@ namespace MiniE_TicaretPaneli.Controllers.Customer
             var query = _context.Products
                 .Include(p => p.MainCategory)
                 .Include(p => p.SubCategory)
+                .Where(p => p.IsActive) // Sadece aktif ürünleri göster
                 .AsQueryable();
 
             // Gender filtrelemesi - kategorilerin Gender alanına göre
@@ -67,7 +68,7 @@ namespace MiniE_TicaretPaneli.Controllers.Customer
                 .ToListAsync();
                 
             ViewBag.Brands = await _context.Products
-                .Where(p => !string.IsNullOrEmpty(p.Brand))
+                .Where(p => !string.IsNullOrEmpty(p.Brand) && p.IsActive) // Sadece aktif ürünlerin markalarını al
                 .Select(p => p.Brand)
                 .Distinct()
                 .OrderBy(b => b)
@@ -81,13 +82,14 @@ namespace MiniE_TicaretPaneli.Controllers.Customer
         public async Task<IActionResult> ProductDetail(int? id)
         {
             if (id == null)
-                return NotFound();
+                return View("~/Views/Customer/Product/NotFound.cshtml");
             var product = await _context.Products
                 .Include(p => p.MainCategory)
                 .Include(p => p.SubCategory)
+                .Where(p => p.IsActive)
                 .FirstOrDefaultAsync(p => p.Id == id);
             if (product == null)
-                return NotFound();
+                return View("~/Views/Customer/Product/NotFound.cshtml");
             return View("~/Views/Customer/Product/ProductDetail.cshtml", product);
         }
 

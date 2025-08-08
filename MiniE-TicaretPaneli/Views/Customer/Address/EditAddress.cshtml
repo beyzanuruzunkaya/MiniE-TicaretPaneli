@@ -23,7 +23,6 @@
                     <option value="Ankara">Ankara</option>
                     <option value="İzmir">İzmir</option>
                     <option value="Isparta">Isparta</option>
-                    <!-- Diğer şehirler eklenebilir -->
                 </select>
                 <span asp-validation-for="City" class="text-danger"></span>
             </div>
@@ -31,25 +30,46 @@
                 <label asp-for="District" class="form-label">İlçe</label>
                 <select asp-for="District" class="form-select">
                     <option value="">-- İlçe Seçin --</option>
-                    @if (Model.City == "İstanbul") {
-                        <option value="Kadıköy">Kadıköy</option>
-                        <option value="Beşiktaş">Beşiktaş</option>
-                        <option value="Üsküdar">Üsküdar</option>
-                        <option value="Bakırköy">Bakırköy</option>
-                    } else if (Model.City == "Ankara") {
-                        <option value="Çankaya">Çankaya</option>
-                        <option value="Keçiören">Keçiören</option>
-                        <option value="Yenimahalle">Yenimahalle</option>
-                    } else if (Model.City == "İzmir") {
-                        <option value="Konak">Konak</option>
-                        <option value="Bornova">Bornova</option>
-                        <option value="Karşıyaka">Karşıyaka</option>
-                    } else if (Model.City == "Isparta") {
-                        <option value="Merkez">Merkez</option>
-                        <option value="Eğirdir">Eğirdir</option>
-                        <option value="Yalvaç">Yalvaç</option>
-                    }
-                    <!-- Diğer ilçeler eklenebilir -->
+                    <option value="Kadıköy">Kadıköy</option>
+                    <option value="Beşiktaş">Beşiktaş</option>
+                    <option value="Üsküdar">Üsküdar</option>
+                    <option value="Bakırköy">Bakırköy</option>
+                    <option value="Şişli">Şişli</option>
+                    <option value="Fatih">Fatih</option>
+                    <option value="Beyoğlu">Beyoğlu</option>
+                    <option value="Sarıyer">Sarıyer</option>
+                    <option value="Kartal">Kartal</option>
+                    <option value="Maltepe">Maltepe</option>
+                    <option value="Çankaya">Çankaya</option>
+                    <option value="Keçiören">Keçiören</option>
+                    <option value="Yenimahalle">Yenimahalle</option>
+                    <option value="Mamak">Mamak</option>
+                    <option value="Etimesgut">Etimesgut</option>
+                    <option value="Sincan">Sincan</option>
+                    <option value="Altındağ">Altındağ</option>
+                    <option value="Gölbaşı">Gölbaşı</option>
+                    <option value="Polatlı">Polatlı</option>
+                    <option value="Beypazarı">Beypazarı</option>
+                    <option value="Konak">Konak</option>
+                    <option value="Bornova">Bornova</option>
+                    <option value="Karşıyaka">Karşıyaka</option>
+                    <option value="Buca">Buca</option>
+                    <option value="Çiğli">Çiğli</option>
+                    <option value="Gaziemir">Gaziemir</option>
+                    <option value="Bayraklı">Bayraklı</option>
+                    <option value="Urla">Urla</option>
+                    <option value="Seferihisar">Seferihisar</option>
+                    <option value="Foça">Foça</option>
+                    <option value="Merkez">Merkez</option>
+                    <option value="Eğirdir">Eğirdir</option>
+                    <option value="Yalvaç">Yalvaç</option>
+                    <option value="Senirkent">Senirkent</option>
+                    <option value="Sütçüler">Sütçüler</option>
+                    <option value="Şarkikaraağaç">Şarkikaraağaç</option>
+                    <option value="Uluborlu">Uluborlu</option>
+                    <option value="Aksu">Aksu</option>
+                    <option value="Gönen">Gönen</option>
+                    <option value="Keçiborlu">Keçiborlu</option>
                 </select>
                 <span asp-validation-for="District" class="text-danger"></span>
             </div>
@@ -78,7 +98,7 @@
         </div>
     </form>
 </div>
+
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-    <!-- Şehir/ilçe için JS kaldırıldı -->
 } 
