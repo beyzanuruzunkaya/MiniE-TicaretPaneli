@@ -1,83 +1,111 @@
 // Program.cs
 using Microsoft.EntityFrameworkCore;
 using MiniE_TicaretPaneli.Data;
-using MiniE_TicaretPaneli.Models;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.CookiePolicy; // CookiePolicyOptions için
-
+using Microsoft.AspNetCore.CookiePolicy;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
-// 1. SERVICES CONFIGURATION (Servislerin Yapılandırılması)
+// ==============================
+// 1) SERVICES (DI) KATMANI
+// ==============================
 
 builder.Services.AddSession();
-
-
-
 
 builder.Services.AddControllersWithViews()
     .AddRazorOptions(options =>
     {
-        // View konum formatlarını ekle (modüler yapınız için önemli)
         options.ViewLocationFormats.Add("/Views/Admin/{1}/{0}.cshtml");
         options.ViewLocationFormats.Add("/Views/Admin/Product/{0}.cshtml");
         options.ViewLocationFormats.Add("/Views/Customer/{1}/{0}.cshtml");
-        options.ViewLocationFormats.Add("/Views/Customer/Product/{0}.cshtml"); // Müşteri Product Controller View'ları için eklendi
+        options.ViewLocationFormats.Add("/Views/Customer/Product/{0}.cshtml");
     })
-    .AddRazorRuntimeCompilation(); // Geliştirme sırasında Razor dosyalarının anında derlenmesi için
+    .AddRazorRuntimeCompilation();
 
-// Veritabanı bağlamını (ApplicationDbContext) servislere ekle
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Çerez politikası ayarları (GDPR uyumluluğu ve güvenlik için)
 builder.Services.Configure<CookiePolicyOptions>(options =>
 {
-    options.Secure = CookieSecurePolicy.None; // Geliştirme için None
-    options.MinimumSameSitePolicy = SameSiteMode.Lax; // Geliştirme için daha esnek
-    options.HttpOnly = HttpOnlyPolicy.Always; // JavaScript erişimini engelle
+    // Geliştirme için daha esnek; prod’da Secure=Always önerilir
+    options.Secure = CookieSecurePolicy.None;
+    options.MinimumSameSitePolicy = SameSiteMode.Lax;
+    options.HttpOnly = HttpOnlyPolicy.Always;
 });
 
-// Cookie Authentication servislerini ekle
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
+// ===== JWT AUTH =====
+var jwtSection = builder.Configuration.GetSection("Jwt");
+var jwtKey = jwtSection["Key"] ?? throw new InvalidOperationException("Jwt:Key eksik.");
+var jwtIssuer = jwtSection["Issuer"];
+var jwtAudience = jwtSection["Audience"];
+
+builder.Services
+    .AddAuthentication(options =>
     {
-        options.LoginPath = "/Account/Login";         // Giriş yapılmadığında yönlendirilecek sayfa
-        options.LogoutPath = "/Account/Logout";       // Çıkış yapıldığında yönlendirilecek sayfa
-        options.AccessDeniedPath = "/Account/AccessDenied"; // Yetkisi olmadığında yönlendirilecek sayfa
-        options.ExpireTimeSpan = TimeSpan.FromMinutes(30); // Oturum süresi
-        options.SlidingExpiration = true;             // Oturum süresini otomatik uzat
-        options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Geliştirme için None
-        options.Cookie.SameSite = SameSiteMode.Lax; // Geliştirme için daha esnek
-        options.Cookie.IsEssential = true;            // Çerezin uygulamanın çalışması için gerekli olduğunu belirtir
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultSignInScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.SaveToken = true;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = !string.IsNullOrWhiteSpace(jwtIssuer),
+            ValidIssuer = jwtIssuer,
+
+            ValidateAudience = !string.IsNullOrWhiteSpace(jwtAudience),
+            ValidAudience = jwtAudience,
+
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromMinutes(2),
+
+            // [Authorize(Roles="Admin")] için:
+            RoleClaimType = ClaimTypes.Role,
+            NameClaimType = ClaimTypes.Name
+        };
+
+        // Token'ı HttpOnly cookie'den oku (access_token)
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = ctx =>
+            {
+                var token = ctx.HttpContext.Request.Cookies["access_token"];
+                if (!string.IsNullOrEmpty(token))
+                    ctx.Token = token;
+                return Task.CompletedTask;
+            }
+        };
     });
 
-// Antiforgery token'ı için çerez güvenliği ayarı
+// Antiforgery (form post’ları için)
 builder.Services.AddAntiforgery(options =>
 {
-    options.Cookie.SecurePolicy = CookieSecurePolicy.None;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.None; // dev için
 });
 
-// Yetkilendirme servislerini ekle
+// Policy örnekleri (JWT role claim’ine dayanır)
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminPolicy", policy => policy.RequireRole("Admin"));
-    options.AddPolicy("CustomerPolicy", policy => policy.RequireRole("Customer")); // Müşteri rolü için politika
+    options.AddPolicy("CustomerPolicy", policy => policy.RequireRole("Customer"));
 });
 
 var app = builder.Build();
-app.UseSession();
 
-// ************************************************************
-// 2. HTTP REQUEST PIPELINE CONFIGURATION (HTTP İstek İşlem Hattının Yapılandırılması)
-// ************************************************************
+// ==============================
+// 2) HTTP PIPELINE
+// ==============================
 
-// Geliştirme ortamı kontrolü ve hata sayfaları
 if (app.Environment.IsDevelopment())
 {
-    app.UseDeveloperExceptionPage(); // Bu satırın aktif olduğundan emin olun
-    // app.UseBrowserLink();
+    app.UseDeveloperExceptionPage();
 }
 else
 {
@@ -85,43 +113,27 @@ else
     app.UseHsts();
 }
 
-// HTTPS'e yönlendirme (sadece production'da)
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHttpsRedirection();
-}
+// Prod’da zorunlu öneri; dev’de de açık tutmak mümkün:
+app.UseHttpsRedirection();
 
-// Statik dosyaları (wwwroot klasöründeki CSS, JS, resimler vb.) sunar
 app.UseStaticFiles();
 
-// Çerez politikası middleware'i (UseAuthentication'dan önce olmalı)
 app.UseCookiePolicy();
 
-// Routing middleware'ini etkinleştirir
 app.UseRouting();
 
-// Session middleware'ini etkinleştirir (UseRouting'den sonra)
 app.UseSession();
 
-// Kimlik Doğrulama middleware'ini etkinleştirir (UseRouting'den sonra, UseAuthorization'dan önce)
+// SIRA: Authentication -> Authorization
 app.UseAuthentication();
-
-// Yetkilendirme middleware'ini etkinleştirir (UseAuthentication'dan sonra)
 app.UseAuthorization();
 
-// Seed Data'yı uygula (Veritabanı boşsa kullanıcıları, kategorileri ve ürünleri ekler)
-// Bu blok tamamen kaldırıldı.
-
-// Varsayılan route'u tanımla
-// Uygulama ilk açıldığında Home/Index'e yönlendirilecek.
-// Eğer Admin/Products'a gitmesini isterseniz: pattern: "{controller=Admin}/{action=Products}/{id?}" olarak değiştirin.
+// MVC routes
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}"
-); // Artık Customer/Product/Products varsayılan başlangıç
+);
 
-// Attribute routing ile tanımlanan controller/action endpoint'leri için eklendi
 app.MapControllers();
 
-// Uygulamayı çalıştır
 app.Run();
